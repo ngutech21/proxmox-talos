@@ -1,0 +1,31 @@
+# Proxmox API
+proxmox_api_url      = "https://pve.example.internal:8006/api2/json"
+proxmox_insecure_tls = true
+
+# Cluster metadata
+cluster_name = "talos-homelab"
+api_vip      = "192.168.178.50"
+
+# Talos raw image
+talos_image_datastore = "local"
+talos_image_filename  = "talos-nocloud-amd64.raw"
+
+# Cluster node layout (explicit placement)
+cluster_nodes = [
+  { name = "talos-cp-01", role = "control_plane", proxmox_node = "pve-1", vm_id = 9001, ip = "192.168.178.101" },
+  { name = "talos-cp-02", role = "control_plane", proxmox_node = "pve-2", vm_id = 9002, ip = "192.168.178.102" },
+  { name = "talos-cp-03", role = "control_plane", proxmox_node = "pve-3", vm_id = 9003, ip = "192.168.178.103" }
+]
+
+# VM defaults (optional per-node overrides in cluster_nodes)
+vm_cores          = 2
+vm_memory_mb      = 4096
+vm_disk_datastore = "local-zfs"
+vm_disk_size_gb   = 40
+vm_network_bridge = "vmbr0"
+vm_ip_cidr        = 24
+vm_tags           = ["homelab"]
+
+# Network metadata
+vm_gateway     = "192.168.178.1"
+vm_dns_servers = ["192.168.178.1", "1.1.1.1"]

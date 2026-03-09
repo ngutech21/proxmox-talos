@@ -1,0 +1,141 @@
+terraform {
+  required_version = ">= 1.6.0"
+
+  required_providers {
+    proxmox = {
+      source  = "bpg/proxmox"
+      version = "~> 0.98.0"
+    }
+  }
+}
+
+locals {
+  enabled_nodes = [
+    for node in var.cluster_nodes : merge(node, {
+      cores     = coalesce(try(node.cores, null), var.vm_cores)
+      memory_mb = coalesce(try(node.memory_mb, null), var.vm_memory_mb)
+      disk_gb   = coalesce(try(node.disk_gb, null), var.vm_disk_size_gb)
+      tags      = distinct(concat(var.vm_tags, coalesce(try(node.tags, null), [])))
+    })
+    if try(node.enabled, true)
+  ]
+
+  control_plane_nodes = [
+    for node in local.enabled_nodes : node
+    if node.role == "control_plane"
+  ]
+
+  worker_nodes = [
+    for node in local.enabled_nodes : node
+    if node.role == "worker"
+  ]
+
+  image_file_id = "${var.talos_image_datastore}:import/${var.talos_image_filename}"
+}
+
+provider "proxmox" {
+  endpoint  = var.proxmox_api_url
+  api_token = "${var.proxmox_api_token_id}=${var.proxmox_api_token_secret}"
+  insecure  = var.proxmox_insecure_tls
+}
+
+resource "proxmox_virtual_environment_vm" "talos_node" {
+  for_each      = { for node in local.enabled_nodes : node.name => node }
+  name          = each.value.name
+  description   = "Talos ${each.value.role} node for ${var.cluster_name}"
+  node_name     = each.value.proxmox_node
+  vm_id         = each.value.vm_id
+  started       = true
+  on_boot       = true
+  scsi_hardware = "virtio-scsi-single"
+
+  tags = distinct(concat(["terraform", "talos"], each.value.tags))
+
+  cpu {
+    cores = each.value.cores
+    type  = "host"
+  }
+
+  memory {
+    dedicated = each.value.memory_mb
+  }
+
+  operating_system {
+    type = "l26"
+  }
+
+  disk {
+    datastore_id = var.vm_disk_datastore
+    import_from  = local.image_file_id
+    interface    = "scsi0"
+    file_format  = "raw"
+    size         = each.value.disk_gb
+    discard      = "on"
+    iothread     = true
+  }
+
+  network_device {
+    bridge = var.vm_network_bridge
+    model  = "virtio"
+  }
+
+  lifecycle {
+    precondition {
+      condition     = trimspace(try(each.value.proxmox_node, "")) != ""
+      error_message = "Each enabled node must define proxmox_node."
+    }
+
+    precondition {
+      condition     = try(each.value.cores, 0) > 0
+      error_message = "Each enabled node must define cores > 0."
+    }
+
+    precondition {
+      condition     = try(each.value.memory_mb, 0) > 0
+      error_message = "Each enabled node must define memory_mb > 0."
+    }
+
+    precondition {
+      condition     = try(each.value.disk_gb, 0) > 0
+      error_message = "Each enabled node must define disk_gb > 0."
+    }
+  }
+}
+
+output "cluster_name" {
+  description = "Cluster name from the Terraform cluster definition"
+  value       = var.cluster_name
+}
+
+output "api_vip" {
+  description = "API VIP reserved for the Talos control plane"
+  value       = var.api_vip
+}
+
+output "image_file_id" {
+  description = "Imported Talos raw image file ID used by VM disks"
+  value       = local.image_file_id
+}
+
+output "node_details" {
+  description = "Details for all enabled nodes"
+  value = [
+    for node in local.enabled_nodes : {
+      name         = node.name
+      role         = node.role
+      proxmox_node = node.proxmox_node
+      vm_id        = node.vm_id
+      ip           = node.ip
+    }
+  ]
+}
+
+output "control_plane_ips" {
+  description = "IP addresses of enabled control-plane nodes"
+  value       = [for node in local.control_plane_nodes : node.ip]
+}
+
+output "worker_ips" {
+  description = "IP addresses of enabled worker nodes"
+  value       = [for node in local.worker_nodes : node.ip]
+}
