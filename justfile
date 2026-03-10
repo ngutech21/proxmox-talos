@@ -166,7 +166,6 @@ bootstrap-kubeconfig: require-talosconfig ensure-generated-dir
 wait-ready: require-talosconfig require-kubeconfig
     #!/usr/bin/env bash
     set -euo pipefail
-    bootstrap_node="$(terraform -chdir=02-bootstrap output -raw bootstrap_node_ip)"
     api_vip="$(terraform -chdir=02-bootstrap output -raw api_vip)"
     control_plane_ips="$(terraform -chdir=02-bootstrap output -json control_plane_ips | tr -d '[]\"[:space:]')"
     worker_ips="$(terraform -chdir=02-bootstrap output -json worker_ips | tr -d '[]\"[:space:]')"
@@ -176,20 +175,19 @@ wait-ready: require-talosconfig require-kubeconfig
     health_args=(
       --talosconfig "$talosconfig_path"
       --endpoints "$control_plane_ips"
-      --init-node "$bootstrap_node"
       --control-plane-nodes "$control_plane_ips"
       --k8s-endpoint "https://$api_vip:6443"
-      --wait-timeout 20m
+      --wait-timeout 5m
     )
 
     if [ -n "$worker_ips" ]; then
       health_args+=(--worker-nodes "$worker_ips")
     fi
 
-    if ! talosctl health "${health_args[@]}"; then
-      echo "talosctl health did not fully converge, continuing with Kubernetes readiness checks" >&2
-    fi
     kubectl --kubeconfig "$kubeconfig_path" wait --for=condition=Ready nodes --all --timeout=15m
+    if ! talosctl health "${health_args[@]}"; then
+      echo "talosctl health did not fully converge after Kubernetes became Ready; continuing" >&2
+    fi
 
 bootstrap-cluster: bootstrap-apply bootstrap-etcd bootstrap-kubeconfig wait-ready
 
