@@ -18,5 +18,8 @@ spec:
   install:
     createNamespace: false
   values:
+    longhornUI:
+      replicas: 3
     defaultSettings:
       defaultDataPath: /var/mnt/longhorn
+      defaultReplicaCount: 3
