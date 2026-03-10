@@ -40,16 +40,27 @@ provider "proxmox" {
 }
 
 resource "proxmox_virtual_environment_vm" "talos_node" {
-  for_each      = { for node in local.enabled_nodes : node.name => node }
-  name          = each.value.name
-  description   = "Talos ${each.value.role} node for ${var.cluster_name}"
-  node_name     = each.value.proxmox_node
-  vm_id         = each.value.vm_id
-  started       = true
-  on_boot       = true
-  scsi_hardware = "virtio-scsi-single"
+  for_each        = { for node in local.enabled_nodes : node.name => node }
+  name            = each.value.name
+  description     = "Talos ${each.value.role} node for ${var.cluster_name}"
+  node_name       = each.value.proxmox_node
+  vm_id           = each.value.vm_id
+  started         = true
+  on_boot         = true
+  stop_on_destroy = true
+  machine         = "q35"
+  scsi_hardware   = "virtio-scsi-single"
 
   tags = distinct(concat(["terraform", "talos"], each.value.tags))
+
+  agent {
+    enabled = true
+    timeout = "10m"
+
+    wait_for_ip {
+      ipv4 = true
+    }
+  }
 
   cpu {
     cores = each.value.cores
@@ -79,6 +90,8 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
     model  = "virtio"
   }
 
+  serial_device {}
+
   lifecycle {
     precondition {
       condition     = trimspace(try(each.value.proxmox_node, "")) != ""
@@ -102,6 +115,28 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
   }
 }
 
+locals {
+  node_runtime_details = [
+    for node in local.enabled_nodes : {
+      name         = node.name
+      role         = node.role
+      proxmox_node = node.proxmox_node
+      vm_id        = node.vm_id
+      ip           = node.ip
+      current_ip = try([
+        for address in flatten(proxmox_virtual_environment_vm.talos_node[node.name].ipv4_addresses) : address
+        if address != "" && !startswith(address, "127.") && !startswith(address, "169.254.")
+      ][0], null)
+      current_ips = try([
+        for address in flatten(proxmox_virtual_environment_vm.talos_node[node.name].ipv4_addresses) : address
+        if address != "" && !startswith(address, "127.") && !startswith(address, "169.254.")
+      ], [])
+      network_interface_names = try(flatten(proxmox_virtual_environment_vm.talos_node[node.name].network_interface_names), [])
+      mac_addresses           = try(flatten(proxmox_virtual_environment_vm.talos_node[node.name].mac_addresses), [])
+    }
+  ]
+}
+
 output "cluster_name" {
   description = "Cluster name from the Terraform cluster definition"
   value       = var.cluster_name
@@ -119,15 +154,7 @@ output "image_file_id" {
 
 output "node_details" {
   description = "Details for all enabled nodes"
-  value = [
-    for node in local.enabled_nodes : {
-      name         = node.name
-      role         = node.role
-      proxmox_node = node.proxmox_node
-      vm_id        = node.vm_id
-      ip           = node.ip
-    }
-  ]
+  value       = local.node_runtime_details
 }
 
 output "control_plane_ips" {
@@ -138,4 +165,11 @@ output "control_plane_ips" {
 output "worker_ips" {
   description = "IP addresses of enabled worker nodes"
   value       = [for node in local.worker_nodes : node.ip]
+}
+
+output "bootstrap_endpoints" {
+  description = "Current IPv4 addresses discovered via the QEMU guest agent for each enabled node"
+  value = {
+    for node in local.node_runtime_details : node.name => node.current_ip
+  }
 }

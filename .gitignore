@@ -19,3 +19,7 @@ cluster.secrets.tfvars
 **/override.tf.json
 **/*_override.tf
 **/*_override.tf.json
+
+# Generated artifacts
+**/.generated/*
+!**/.generated/.gitignore

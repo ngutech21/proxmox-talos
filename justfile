@@ -5,7 +5,10 @@ cluster_example := "cluster.tfvars.example"
 cluster_secrets := "cluster.secrets.tfvars"
 cluster_secrets_example := "cluster.secrets.tfvars.example"
 provision_dir := "01-provision"
-tfplan_path := "tfplan"
+provision_plan_path := "tfplan"
+talos_dir := "02-talos"
+talos_plan_path := "tfplan"
+generated_dir := "02-talos/.generated"
 
 default:
     @just --list
@@ -22,5 +25,25 @@ provision-vms:
     if [ ! -f "{{cluster_config}}" ]; then echo "Missing {{cluster_config}}. Run 'just init-config' first." >&2; exit 1; fi
     if [ ! -f "{{cluster_secrets}}" ]; then echo "Missing {{cluster_secrets}}. Run 'just init-config' first." >&2; exit 1; fi
     terraform -chdir="{{provision_dir}}" init
-    terraform -chdir="{{provision_dir}}" plan -var-file="../{{cluster_config}}" -var-file="../{{cluster_secrets}}" -out="{{tfplan_path}}"
-    terraform -chdir="{{provision_dir}}" apply "{{tfplan_path}}"
+    terraform -chdir="{{provision_dir}}" plan -var-file="../{{cluster_config}}" -var-file="../{{cluster_secrets}}" -out="{{provision_plan_path}}"
+    terraform -chdir="{{provision_dir}}" apply "{{provision_plan_path}}"
+
+bootstrap-cluster:
+    if [ ! -f "{{cluster_config}}" ]; then echo "Missing {{cluster_config}}. Run 'just init-config' first." >&2; exit 1; fi
+    if [ ! -f "{{cluster_secrets}}" ]; then echo "Missing {{cluster_secrets}}. Run 'just init-config' first." >&2; exit 1; fi
+    mkdir -p "{{generated_dir}}"
+    terraform -chdir="{{provision_dir}}" init
+    terraform -chdir="{{provision_dir}}" apply -refresh-only -auto-approve -var-file="../{{cluster_config}}" -var-file="../{{cluster_secrets}}"
+    terraform -chdir="{{talos_dir}}" init
+    terraform -chdir="{{talos_dir}}" plan -var-file="../{{cluster_config}}" -var-file="../{{cluster_secrets}}" -out="{{talos_plan_path}}"
+    terraform -chdir="{{talos_dir}}" apply "{{talos_plan_path}}"
+
+kubeconfig:
+    if [ ! -f "{{generated_dir}}/kubeconfig" ]; then echo "Missing {{generated_dir}}/kubeconfig. Run 'just bootstrap-cluster' first." >&2; exit 1; fi
+    printf '%s\n' "$$(pwd)/{{generated_dir}}/kubeconfig"
+
+print-cluster-info:
+    terraform -chdir="{{talos_dir}}" output cluster_info
+
+destroy-cluster:
+    terraform -chdir="{{provision_dir}}" destroy -var-file="../{{cluster_config}}" -var-file="../{{cluster_secrets}}"
