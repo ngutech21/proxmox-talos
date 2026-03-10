@@ -38,6 +38,13 @@ The Talos boot image must include `qemu-guest-agent`, because the bootstrap stag
    just bootstrap-cluster
    ```
 
+6. Bootstrap Flux CD into this GitHub repository:
+
+   ```bash
+   export GITHUB_TOKEN='<github-pat>'
+   just install-flux
+   ```
+
 ## Cluster Config
 
 The shared root config lives in `cluster.tfvars`, following the same Terraform HCL style as `proxmox-k3s`:
@@ -107,6 +114,45 @@ kubectl get nodes
 
 - `03-infrastructure` will bootstrap Flux CD and reconcile platform components such as Traefik, cert-manager, and Longhorn.
 - `04-apps` is reserved for example applications or concrete workloads that should stay separate from the platform layer.
+
+## Flux Bootstrap
+
+Flux bootstrap writes its own manifests into this repository under:
+
+```text
+03-infrastructure/clusters/<cluster_name>/
+```
+
+The repository already contains the stage skeleton:
+
+- `03-infrastructure/clusters/` for cluster-specific Flux bootstrap output
+- `03-infrastructure/infrastructure/` for shared platform components managed by Flux
+- `04-apps/` for example or user workloads
+
+The `just install-flux` command:
+
+- reads `cluster_name` from `cluster.tfvars`
+- reuses `02-bootstrap/.generated/kubeconfig`
+- derives the GitHub owner and repository from the `origin` remote by default
+- runs `flux bootstrap github --token-auth`
+
+Required environment variable:
+
+```bash
+export GITHUB_TOKEN='<github-pat>'
+```
+
+Optional overrides if the `origin` remote should not be used:
+
+```bash
+just install-flux owner=<github-owner> repo=<github-repo> branch=main cluster=<cluster-name>
+```
+
+After bootstrap, you can force an immediate reconciliation with:
+
+```bash
+just reconcile-flux
+```
 
 ## Notes
 
