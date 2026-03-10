@@ -14,3 +14,10 @@ Expected layout:
 - `03-infrastructure/clusters/<cluster-name>/`
 
 The first planned platform component is Traefik.
+
+Current structure:
+
+- `clusters/talos-homelab/infrastructure.yaml`
+  cluster-specific Flux `Kustomization` that points at the shared Traefik base
+- `infrastructure/traefik/`
+  minimal Traefik install via `HelmRepository` and `HelmRelease`
