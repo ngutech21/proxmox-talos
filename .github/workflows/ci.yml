@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_VAR_proxmox_api_token_id: "dummy@pam!talos"
+  TF_VAR_proxmox_api_token_secret: "00000000-0000-0000-0000-000000000000"
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3.1.2
+
+      - name: Check Terraform formatting
+        run: terraform fmt -check -recursive
+
+      - name: Init 01-provision
+        working-directory: 01-provision
+        run: terraform init -backend=false
+
+      - name: Validate 01-provision
+        working-directory: 01-provision
+        run: terraform validate
+
+      - name: Init 02-bootstrap
+        working-directory: 02-bootstrap
+        run: terraform init -backend=false
+
+      - name: Validate 02-bootstrap
+        working-directory: 02-bootstrap
+        run: terraform validate
+
+  tflint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3.1.2
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4.1.1
+
+      - name: Lint 01-provision
+        working-directory: 01-provision
+        run: |
+          tflint --init --config=../.tflint.hcl
+          tflint --config=../.tflint.hcl
+
+      - name: Lint 02-bootstrap
+        working-directory: 02-bootstrap
+        run: |
+          tflint --init --config=../.tflint.hcl
+          tflint --config=../.tflint.hcl

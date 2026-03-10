@@ -1,5 +1,8 @@
 # proxmox-talos
 
+[![CI](https://img.shields.io/github/actions/workflow/status/ngutech21/proxmox-talos/ci.yml?branch=master&label=ci)](https://github.com/ngutech21/proxmox-talos/actions/workflows/ci.yml)
+[![Actionlint](https://img.shields.io/github/actions/workflow/status/ngutech21/proxmox-talos/actionlint.yml?branch=master&label=actionlint)](https://github.com/ngutech21/proxmox-talos/actions/workflows/actionlint.yml)
+
 Declarative Talos-on-Proxmox homelab platform with a clear split between infrastructure, cluster bootstrap, and GitOps delivery.
 
 The current workflow uses two Terraform stages:
