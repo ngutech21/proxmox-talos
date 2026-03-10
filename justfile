@@ -34,6 +34,10 @@ require-kubeconfig:
     if [ ! -f "{{generated_dir}}/kubeconfig" ]; then echo "Missing {{generated_dir}}/kubeconfig. Run 'just bootstrap-cluster' first." >&2; exit 1; fi
 
 [private]
+require-talosconfig:
+    if [ ! -f "{{generated_dir}}/talosconfig" ]; then echo "Missing {{generated_dir}}/talosconfig. Run 'just bootstrap-cluster' first." >&2; exit 1; fi
+
+[private]
 require-github-token:
     if [ -z "${GITHUB_TOKEN:-}" ]; then echo "Missing GITHUB_TOKEN. Export a GitHub PAT for flux bootstrap." >&2; exit 1; fi
 
@@ -55,7 +59,11 @@ provision-apply:
 
 [private, working-directory: '01-provision']
 provision-refresh:
-    terraform apply -refresh-only -auto-approve -var-file="../{{cluster_config}}" -var-file="../{{cluster_secrets}}"
+    terraform apply -refresh-only -var-file="../{{cluster_config}}" -var-file="../{{cluster_secrets}}"
+
+[private, working-directory: '01-provision']
+provision-destroy:
+    terraform destroy -var-file="../{{cluster_config}}" -var-file="../{{cluster_secrets}}"
 
 [private, working-directory: '02-bootstrap']
 talos-init:
@@ -68,6 +76,10 @@ talos-plan:
 [private, working-directory: '02-bootstrap']
 talos-apply:
     terraform apply "{{talos_plan_path}}"
+
+[private, working-directory: '02-bootstrap']
+talos-destroy:
+    terraform destroy -var-file="../{{cluster_config}}" -var-file="../{{cluster_secrets}}"
     
 [private, working-directory: '01-provision']
 tflint-provision:
@@ -79,7 +91,107 @@ tflint-bootstrap:
 
 provision-vms: require-config provision-init provision-plan provision-apply
 
-bootstrap-cluster: require-config ensure-generated-dir provision-init provision-refresh talos-init talos-plan talos-apply
+[private]
+bootstrap-apply: require-config ensure-generated-dir provision-init provision-refresh talos-init talos-plan talos-apply
+
+[private]
+bootstrap-etcd: require-talosconfig
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bootstrap_node="$(terraform -chdir=02-bootstrap output -raw bootstrap_node_ip)"
+    talosconfig_path="$(pwd)/{{generated_dir}}/talosconfig"
+    kubeconfig_path="$(pwd)/{{generated_dir}}/kubeconfig"
+    deadline=$((SECONDS + 1200))
+    if [ -f "$kubeconfig_path" ] && kubectl --kubeconfig "$kubeconfig_path" get nodes >/dev/null 2>&1; then
+      echo "Cluster already reachable with existing kubeconfig; skipping talos bootstrap"
+      exit 0
+    fi
+    until talosctl --talosconfig "$talosconfig_path" --endpoints "$bootstrap_node" --nodes "$bootstrap_node" version >/dev/null 2>&1; do
+      if [ "$SECONDS" -ge "$deadline" ]; then
+        echo "Timed out waiting for Talos API on $bootstrap_node before bootstrap" >&2
+        exit 1
+      fi
+      sleep 5
+    done
+    while true; do
+      if output="$(talosctl --talosconfig "$talosconfig_path" --endpoints "$bootstrap_node" --nodes "$bootstrap_node" bootstrap 2>&1)"; then
+        printf '%s\n' "$output"
+        break
+      fi
+      if printf '%s' "$output" | grep -Eqi "bootstrap is not available yet|already bootstrapped"; then
+        printf '%s\n' "$output"
+        if printf '%s' "$output" | grep -qi "already bootstrapped"; then
+          break
+        fi
+      elif printf '%s' "$output" | grep -Eqi "connection refused|connect: no route to host|connect: host is down|transport: Error while dialing|rpc error: code = Unavailable|context deadline exceeded|i/o timeout|EOF"; then
+        :
+      else
+        printf '%s\n' "$output" >&2
+        exit 1
+      fi
+      if [ "$SECONDS" -ge "$deadline" ]; then
+        printf '%s\n' "$output" >&2
+        echo "Timed out waiting for Talos bootstrap to become available on $bootstrap_node" >&2
+        exit 1
+      fi
+      sleep 10
+    done
+
+[private]
+bootstrap-kubeconfig: require-talosconfig ensure-generated-dir
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bootstrap_node="$(terraform -chdir=02-bootstrap output -raw bootstrap_node_ip)"
+    talosconfig_path="$(pwd)/{{generated_dir}}/talosconfig"
+    kubeconfig_path="$(pwd)/{{generated_dir}}/kubeconfig"
+    deadline=$((SECONDS + 1200))
+    while true; do
+      if output="$(talosctl --talosconfig "$talosconfig_path" --endpoints "$bootstrap_node" --nodes "$bootstrap_node" kubeconfig "$kubeconfig_path" --merge=false --force 2>&1)"; then
+        printf '%s\n' "$output"
+        break
+      fi
+      if ! printf '%s' "$output" | grep -Eqi "connection refused|connect: no route to host|connect: host is down|transport: Error while dialing|rpc error: code = Unavailable|context deadline exceeded|i/o timeout|EOF"; then
+        printf '%s\n' "$output" >&2
+        exit 1
+      fi
+      if [ "$SECONDS" -ge "$deadline" ]; then
+        printf '%s\n' "$output" >&2
+        echo "Timed out retrieving kubeconfig from $bootstrap_node" >&2
+        exit 1
+      fi
+      sleep 10
+    done
+
+[private]
+wait-ready: require-talosconfig require-kubeconfig
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bootstrap_node="$(terraform -chdir=02-bootstrap output -raw bootstrap_node_ip)"
+    api_vip="$(terraform -chdir=02-bootstrap output -raw api_vip)"
+    control_plane_ips="$(terraform -chdir=02-bootstrap output -json control_plane_ips | tr -d '[]\"[:space:]')"
+    worker_ips="$(terraform -chdir=02-bootstrap output -json worker_ips | tr -d '[]\"[:space:]')"
+    talosconfig_path="$(pwd)/{{generated_dir}}/talosconfig"
+    kubeconfig_path="$(pwd)/{{generated_dir}}/kubeconfig"
+
+    health_args=(
+      --talosconfig "$talosconfig_path"
+      --endpoints "$control_plane_ips"
+      --init-node "$bootstrap_node"
+      --control-plane-nodes "$control_plane_ips"
+      --k8s-endpoint "https://$api_vip:6443"
+      --wait-timeout 20m
+    )
+
+    if [ -n "$worker_ips" ]; then
+      health_args+=(--worker-nodes "$worker_ips")
+    fi
+
+    if ! talosctl health "${health_args[@]}"; then
+      echo "talosctl health did not fully converge, continuing with Kubernetes readiness checks" >&2
+    fi
+    kubectl --kubeconfig "$kubeconfig_path" wait --for=condition=Ready nodes --all --timeout=15m
+
+bootstrap-cluster: bootstrap-apply bootstrap-etcd bootstrap-kubeconfig wait-ready
 
 tflint: tflint-provision tflint-bootstrap
 
@@ -141,6 +253,4 @@ reconcile-flux: require-kubeconfig
     env KUBECONFIG="$$(pwd)/{{generated_dir}}/kubeconfig" flux reconcile source git flux-system -n flux-system
     env KUBECONFIG="$$(pwd)/{{generated_dir}}/kubeconfig" flux reconcile kustomization flux-system -n flux-system --with-source
 
-[working-directory: '01-provision']
-destroy-cluster:
-    terraform destroy -var-file="../{{cluster_config}}" -var-file="../{{cluster_secrets}}"
+destroy-cluster: require-config talos-init talos-destroy provision-init provision-destroy

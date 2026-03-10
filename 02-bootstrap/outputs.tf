@@ -18,15 +18,14 @@ output "bootstrap_endpoints" {
   value       = local.bootstrap_endpoints
 }
 
+output "bootstrap_node_ip" {
+  description = "Final static IPv4 address of the first control-plane node used for Talos bootstrap"
+  value       = local.bootstrap_node.ip
+}
+
 output "talosconfig" {
   description = "Talos client configuration"
   value       = data.talos_client_configuration.cluster.talos_config
-  sensitive   = true
-}
-
-output "kubeconfig" {
-  description = "Kubernetes client configuration"
-  value       = talos_cluster_kubeconfig.cluster.kubeconfig_raw
   sensitive   = true
 }
 

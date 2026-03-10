@@ -8,7 +8,7 @@ Declarative Talos-on-Proxmox homelab platform with a clear split between infrast
 The current workflow uses two Terraform stages:
 
 - `01-provision` creates Talos VMs on Proxmox from an existing raw image.
-- `02-bootstrap` uses the official Talos Terraform provider to generate machine configs, apply them, bootstrap the cluster, and write `talosconfig` plus `kubeconfig`.
+- `02-bootstrap` uses the official Talos Terraform provider to generate machine configs and apply them. `talosctl` then performs the one-time bootstrap and kubeconfig retrieval.
 
 The next planned layers are:
 
@@ -103,8 +103,10 @@ just print-cluster-info
 - Talos secrets generation inside Terraform state
 - one machine config per node with static IP, gateway, DNS, hostname, install disk, installer image, and control-plane VIP
 - config apply to the currently reachable VM addresses reported by Proxmox guest agent
-- cluster bootstrap on the first control-plane node
-- `talosconfig` and `kubeconfig` written to `02-bootstrap/.generated/`
+- `talosconfig` written to `02-bootstrap/.generated/`
+- `talosctl bootstrap` on the first control-plane node
+- `talosctl kubeconfig` into `02-bootstrap/.generated/kubeconfig`
+- Talos and Kubernetes readiness checks
 
 Then fetch kubeconfig and inspect the cluster:
 

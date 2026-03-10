@@ -176,35 +176,6 @@ resource "talos_machine_configuration_apply" "node" {
   }
 }
 
-resource "talos_machine_bootstrap" "cluster" {
-  depends_on = [
-    talos_machine_configuration_apply.node
-  ]
-
-  client_configuration = talos_machine_secrets.cluster.client_configuration
-  endpoint             = local.bootstrap_node.ip
-  node                 = local.bootstrap_node.ip
-
-  timeouts = {
-    create = "10m"
-  }
-}
-
-resource "talos_cluster_kubeconfig" "cluster" {
-  depends_on = [
-    talos_machine_bootstrap.cluster
-  ]
-
-  client_configuration = talos_machine_secrets.cluster.client_configuration
-  endpoint             = local.bootstrap_node.ip
-  node                 = local.bootstrap_node.ip
-
-  timeouts = {
-    create = "10m"
-    update = "10m"
-  }
-}
-
 resource "local_sensitive_file" "machine_config" {
   for_each = data.talos_machine_configuration.node
 
@@ -215,9 +186,4 @@ resource "local_sensitive_file" "machine_config" {
 resource "local_sensitive_file" "talosconfig" {
   content  = data.talos_client_configuration.cluster.talos_config
   filename = "${path.module}/.generated/talosconfig"
-}
-
-resource "local_sensitive_file" "kubeconfig" {
-  content  = talos_cluster_kubeconfig.cluster.kubeconfig_raw
-  filename = "${path.module}/.generated/kubeconfig"
 }
