@@ -148,6 +148,12 @@ Optional overrides if the `origin` remote should not be used:
 just install-flux owner=<github-owner> repo=<github-repo> branch=main cluster=<cluster-name>
 ```
 
+## Dependency Updates
+
+Renovate is configured via [renovate.json5](/Users/steffen/projects/proxmox-talos/renovate.json5).
+
+This repository is intended to use the hosted Renovate GitHub App, not a self-hosted GitHub Actions workflow. Once the Renovate App is enabled for this repository, it will read `renovate.json5` automatically.
+
 After bootstrap, you can force an immediate reconciliation with:
 
 ```bash

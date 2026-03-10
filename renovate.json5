@@ -1,0 +1,50 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "timezone": "Europe/Berlin",
+  "dependencyDashboard": true,
+  "rangeStrategy": "bump",
+  "ignorePaths": [
+    "**/.generated/**",
+    "03-infrastructure/clusters/**/flux-system/gotk-components.yaml"
+  ],
+  "packageRules": [
+    {
+      "matchManagers": [
+        "terraform"
+      ],
+      "groupName": "terraform providers"
+    },
+    {
+      "matchManagers": [
+        "flux",
+        "helm-values",
+        "kubernetes"
+      ],
+      "matchFileNames": [
+        "03-infrastructure/**/*.yaml"
+      ],
+      "groupName": "platform manifests"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "(^|/)cluster\\.tfvars\\.example$",
+        "(^|/)README\\.md$"
+      ],
+      "matchStrings": [
+        "talos_version\\s*=\\s*\"(?<currentValue>v?[^\"]+)\""
+      ],
+      "depNameTemplate": "siderolabs/talos",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    }
+  ]
+}
