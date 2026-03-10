@@ -49,7 +49,7 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
   on_boot         = true
   stop_on_destroy = true
   machine         = "q35"
-  scsi_hardware   = "virtio-scsi-single"
+  scsi_hardware   = "virtio-scsi-pci"
 
   tags = distinct(concat(["terraform", "talos"], each.value.tags))
 
