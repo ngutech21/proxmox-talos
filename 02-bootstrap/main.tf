@@ -131,13 +131,11 @@ locals {
         apiVersion = "v1alpha1"
         kind       = "UserVolumeConfig"
         name       = "longhorn"
+        volumeType = "disk"
         provisioning = {
           diskSelector = {
-            match = "!system_disk"
+            match = "disk.dev_path == '/dev/sdb'"
           }
-          minSize = "${var.worker_data_disk_size_gb}GiB"
-          maxSize = "${var.worker_data_disk_size_gb}GiB"
-          grow    = false
         }
       }) : null
     )

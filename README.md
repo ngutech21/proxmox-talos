@@ -263,7 +263,7 @@ The guest agent is required because the bootstrap stage discovers each VM's init
 - `talos_installer_image` must match the raw image build. If the raw image contains extensions such as `siderolabs/qemu-guest-agent`, the installer image must contain the same extensions.
 - `talos_version` should match the Talos version of the raw and installer images.
 - `talos_install_disk` defaults to `/dev/sda`. If your imported disk appears as a different device, update `cluster.tfvars` before running `just bootstrap-cluster`.
-- `worker_data_disk_size_gb` defaults to `100`. Worker nodes receive an additional `scsi1` disk of this size, and Talos provisions it as a `UserVolumeConfig` named `longhorn`.
+- `worker_data_disk_size_gb` defaults to `100`. Worker nodes receive an additional `scsi1` disk of this size, and Talos provisions `/dev/sdb` as a `UserVolumeConfig` named `longhorn`.
 - `just bootstrap-cluster` relies on guest-agent-discovered IPv4 addresses from `01-provision`. If those are missing, the boot image likely does not start `qemu-guest-agent`.
 
 ## 🔄 Dependency Updates
