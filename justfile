@@ -248,7 +248,7 @@ install-flux owner='' repo='' branch='master' cluster='': require-config require
       --token-auth
 
 reconcile-flux: require-kubeconfig
-    env KUBECONFIG="$$(pwd)/{{generated_dir}}/kubeconfig" flux reconcile source git flux-system -n flux-system
-    env KUBECONFIG="$$(pwd)/{{generated_dir}}/kubeconfig" flux reconcile kustomization flux-system -n flux-system --with-source
+    flux --kubeconfig "{{generated_dir}}/kubeconfig" reconcile source git flux-system -n flux-system
+    flux --kubeconfig "{{generated_dir}}/kubeconfig" reconcile kustomization flux-system -n flux-system --with-source
 
 destroy-cluster: require-config talos-init talos-destroy provision-init provision-destroy

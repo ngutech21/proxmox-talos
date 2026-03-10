@@ -27,3 +27,4 @@ Current structure:
   minimal Traefik install via `HelmRepository` and `HelmRelease`
 - `infrastructure/longhorn/`
   minimal Longhorn install via `HelmRepository` and `HelmRelease`, using `/var/mnt/longhorn` as `defaultDataPath`
+  and exposing the UI through Traefik at `longhorn.home.arpa`
