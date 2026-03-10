@@ -118,9 +118,9 @@ bootstrap-etcd: require-talosconfig
         printf '%s\n' "$output"
         break
       fi
-      if printf '%s' "$output" | grep -Eqi "bootstrap is not available yet|already bootstrapped"; then
+      if printf '%s' "$output" | grep -Eqi "bootstrap is not available yet|already bootstrapped|AlreadyExists|etcd data directory is not empty"; then
         printf '%s\n' "$output"
-        if printf '%s' "$output" | grep -qi "already bootstrapped"; then
+        if printf '%s' "$output" | grep -Eqi "already bootstrapped|AlreadyExists|etcd data directory is not empty"; then
           break
         fi
       elif printf '%s' "$output" | grep -Eqi "connection refused|connect: no route to host|connect: host is down|transport: Error while dialing|rpc error: code = Unavailable|context deadline exceeded|i/o timeout|EOF"; then

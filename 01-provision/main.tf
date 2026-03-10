@@ -86,6 +86,20 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
     ssd          = true
   }
 
+  dynamic "disk" {
+    for_each = each.value.role == "worker" && var.worker_data_disk_size_gb > 0 ? [1] : []
+
+    content {
+      datastore_id = var.vm_disk_datastore
+      interface    = "scsi1"
+      file_format  = "raw"
+      size         = var.worker_data_disk_size_gb
+      discard      = "on"
+      iothread     = true
+      ssd          = true
+    }
+  }
+
   network_device {
     bridge = var.vm_network_bridge
     model  = "virtio"

@@ -155,6 +155,17 @@ variable "vm_disk_size_gb" {
   default     = 40
 }
 
+variable "worker_data_disk_size_gb" {
+  description = "Additional worker-only data disk size in GB, declared here so the shared tfvars file can be reused across both Terraform stages"
+  type        = number
+  default     = 100
+
+  validation {
+    condition     = var.worker_data_disk_size_gb >= 0
+    error_message = "worker_data_disk_size_gb must be greater than or equal to 0."
+  }
+}
+
 variable "vm_network_bridge" {
   description = "VM network bridge, declared here so the shared tfvars file can be reused across both Terraform stages"
   type        = string

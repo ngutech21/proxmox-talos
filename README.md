@@ -1,31 +1,86 @@
 # proxmox-talos
 
-[![CI](https://img.shields.io/github/actions/workflow/status/ngutech21/proxmox-talos/ci.yml?branch=master&label=ci)](https://github.com/ngutech21/proxmox-talos/actions/workflows/ci.yml)
-[![Actionlint](https://img.shields.io/github/actions/workflow/status/ngutech21/proxmox-talos/actionlint.yml?branch=master&label=actionlint)](https://github.com/ngutech21/proxmox-talos/actions/workflows/actionlint.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/ngutech21/proxmox-talos/ci.yml?branch=master&label=CI)](https://github.com/ngutech21/proxmox-talos/actions/workflows/ci.yml)
+[![Actionlint](https://img.shields.io/github/actions/workflow/status/ngutech21/proxmox-talos/actionlint.yml?branch=master&label=Actionlint)](https://github.com/ngutech21/proxmox-talos/actions/workflows/actionlint.yml)
+[![Talos](https://img.shields.io/badge/Talos-Linux-0f172a?logo=linux&logoColor=white)](https://www.talos.dev/)
+[![Terraform](https://img.shields.io/badge/Terraform-Infrastructure-623CE4?logo=terraform&logoColor=white)](https://www.terraform.io/)
+[![Flux](https://img.shields.io/badge/Flux-GitOps-5468FF?logo=flux&logoColor=white)](https://fluxcd.io/)
+[![Proxmox](https://img.shields.io/badge/Proxmox-Virtualization-E57000?logo=proxmox&logoColor=white)](https://www.proxmox.com/)
 
-Declarative Talos-on-Proxmox homelab platform with a clear split between infrastructure, cluster bootstrap, and GitOps delivery.
+🚀 A product-style Talos-on-Proxmox platform for homelabs that want a clean path from VM provisioning to a reproducible Kubernetes cluster.
 
-The current workflow uses two Terraform stages:
+This repository is opinionated on purpose:
 
-- `01-provision` creates Talos VMs on Proxmox from an existing raw image.
-- `02-bootstrap` uses the official Talos Terraform provider to generate machine configs and apply them. `talosctl` then performs the one-time bootstrap and kubeconfig retrieval.
+- define the cluster once
+- provision Talos VMs on Proxmox
+- bootstrap the cluster with Talos
+- connect the cluster to GitOps
 
-The next planned layers are:
+It is designed for operators who want a simpler alternative to hand-rolled Proxmox plus Kubernetes glue.
 
-- `03-infrastructure` for Flux CD bootstrap and cluster-wide platform services like ingress, certificates, and storage
-- `04-apps` for example workloads or concrete user applications
+## ✨ Why Use This
 
-The Talos boot image must include `qemu-guest-agent`, because the bootstrap stage discovers each VM's initial DHCP address through the Proxmox guest agent before Talos switches the node onto its final static IP.
+Most homelab Kubernetes setups accumulate complexity fast:
 
-## Quick Start
+- Proxmox settings drift from cluster docs
+- bootstrap steps live in shell history instead of source control
+- Talos, Terraform, and GitOps responsibilities blur together
+- the path from raw VM to running cluster becomes hard to repeat
 
-1. Initialize the cluster config:
+`proxmox-talos` keeps that workflow compact and explicit.
+
+You get:
+
+- **Declarative cluster definition** with a single root config file
+- **Clear stage boundaries** between infrastructure, bootstrap, and GitOps
+- **Talos-first workflow** instead of generic VM automation pretending to manage cluster state
+- **Generated access artifacts** like `talosconfig` and `kubeconfig`
+- **A cleaner learning path** for Talos and GitOps on Proxmox
+
+## 📦 What Gets Installed
+
+Today, this repository builds the foundation of a Talos-based Kubernetes platform.
+
+| Layer | Tooling | What it installs or creates |
+| --- | --- | --- |
+| Infrastructure | `Terraform` | Talos virtual machines on Proxmox with declared CPU, memory, disks, placement, VM IDs, and networking metadata |
+| Cluster bootstrap | `Talos` | Machine configs, static node networking, control-plane VIP config, cluster bootstrap, `talosconfig`, and `kubeconfig` |
+| GitOps entrypoint | `Flux` | GitOps bootstrap into the cluster and repo structure under `03-infrastructure/` |
+| Platform skeleton | `Flux` manifests | Shared infrastructure layout and a minimal Traefik base for later platform delivery |
+
+Current repository stages:
+
+- `01-provision`: creates Talos VMs on Proxmox from an existing raw image
+- `02-bootstrap`: configures and bootstraps the Talos cluster
+- `03-infrastructure`: Flux-managed platform layer skeleton
+- `04-apps`: reserved for workloads and example apps
+
+## ✅ What You End Up With
+
+After the main bootstrap flow, you have:
+
+- a Talos-based Kubernetes cluster running on Proxmox VMs
+- a declared Kubernetes API endpoint via `api_vip`
+- generated `02-bootstrap/.generated/talosconfig`
+- generated `02-bootstrap/.generated/kubeconfig`
+- an optional GitOps bootstrap path via Flux
+
+If worker data disks are configured, worker nodes also get a Talos `UserVolumeConfig` named `longhorn`, mounted at `/var/mnt/longhorn`.
+
+## 🧭 Quick Start
+
+1. Create local config files from the examples:
 
    ```bash
    just init-config
    ```
 
-2. Edit `cluster.tfvars` with your Proxmox endpoint, network details, and node layout.
+2. Edit `cluster.tfvars` with:
+   - your Proxmox API endpoint
+   - your node layout
+   - your static IP plan
+   - your Talos image settings
+   - your `api_vip`
 
 3. Edit `cluster.secrets.tfvars` with your Proxmox API token values.
 
@@ -35,22 +90,31 @@ The Talos boot image must include `qemu-guest-agent`, because the bootstrap stag
    just provision-vms
    ```
 
-5. Bootstrap Talos and write `02-bootstrap/.generated/kubeconfig`:
+5. Bootstrap Talos and generate access artifacts:
 
    ```bash
    just bootstrap-cluster
    ```
 
-6. Bootstrap Flux CD into this GitHub repository:
+6. Use the generated kubeconfig:
+
+   ```bash
+   export KUBECONFIG="$(pwd)/02-bootstrap/.generated/kubeconfig"
+   kubectl get nodes
+   ```
+
+7. Optionally bootstrap Flux into this repository:
 
    ```bash
    export GITHUB_TOKEN='<github-pat>'
    just install-flux
    ```
 
-## Cluster Config
+## 🧱 Declarative Cluster Config
 
-The shared root config lives in `cluster.tfvars`, following the same Terraform HCL style as `proxmox-k3s`:
+The main user-edited file is `cluster.tfvars`.
+
+Example:
 
 ```hcl
 proxmox_api_url      = "https://pve.example.internal:8006/api2/json"
@@ -61,22 +125,29 @@ api_vip      = "192.168.178.50"
 
 talos_image_datastore = "local"
 talos_image_filename  = "talos-nocloud-amd64.raw"
+talos_install_disk    = "/dev/sda"
 talos_installer_image = "factory.talos.dev/installer/<schematic-id>:v1.12.4"
 talos_version         = "v1.12.4"
+talos_dns_domain      = "cluster.local"
 
 cluster_nodes = [
-  { name = "talos-cp-01", role = "control_plane", proxmox_node = "pve1", vm_id = 9001, ip = "192.168.178.101" }
+  { name = "talos-cp-01", role = "control_plane", proxmox_node = "pve-1", vm_id = 9001, ip = "192.168.178.101" },
+  { name = "talos-cp-02", role = "control_plane", proxmox_node = "pve-2", vm_id = 9002, ip = "192.168.178.102" },
+  { name = "talos-cp-03", role = "control_plane", proxmox_node = "pve-3", vm_id = 9003, ip = "192.168.178.103" },
+  { name = "talos-wk-01", role = "worker", proxmox_node = "pve-1", vm_id = 9101, ip = "192.168.178.111" }
 ]
 
-vm_cores          = 2
-vm_memory_mb      = 4096
-vm_disk_datastore = "local-lvm"
-vm_disk_size_gb   = 40
-vm_network_bridge = "vmbr0"
-vm_ip_cidr        = 24
+vm_cores                 = 2
+vm_memory_mb             = 4096
+vm_disk_datastore        = "local-zfs"
+vm_disk_size_gb          = 40
+worker_data_disk_size_gb = 100
+vm_network_bridge        = "vmbr0"
+vm_ip_cidr               = 24
+vm_tags                  = ["homelab"]
 
 vm_gateway     = "192.168.178.1"
-vm_dns_servers = ["192.168.178.1"]
+vm_dns_servers = ["192.168.178.1", "1.1.1.1"]
 ```
 
 Secrets live separately in `cluster.secrets.tfvars`:
@@ -86,11 +157,35 @@ proxmox_api_token_id     = "terraform@pve!talos"
 proxmox_api_token_secret = "00000000-0000-0000-0000-000000000000"
 ```
 
-## Talos Bootstrap
+## 🏗️ How The Platform Is Structured
 
-The second stage reuses the same `cluster.tfvars`, reads the current VM addresses from `01-provision` state, and writes Talos artifacts into `02-bootstrap/.generated/`.
+### `01-provision`
 
-Commands:
+This stage owns infrastructure state.
+
+It is responsible for:
+
+- VM creation on Proxmox
+- CPU, memory, disks, NICs, and VM placement
+- Talos image references
+- VM IDs, names, and network metadata
+
+It does not perform cluster bootstrap.
+
+### `02-bootstrap`
+
+This stage owns cluster bring-up.
+
+It is responsible for:
+
+- generating Talos machine configs
+- applying Talos config to each node
+- setting static addresses, gateway, DNS, hostname, and control-plane VIP
+- bootstrapping the cluster
+- retrieving `talosconfig` and `kubeconfig`
+- running readiness checks
+
+Useful commands:
 
 ```bash
 just bootstrap-cluster
@@ -101,38 +196,33 @@ just print-cluster-info
 `just bootstrap-cluster` performs:
 
 - Talos secrets generation inside Terraform state
-- one machine config per node with static IP, gateway, DNS, hostname, install disk, installer image, and control-plane VIP
-- config apply to the currently reachable VM addresses reported by Proxmox guest agent
-- `talosconfig` written to `02-bootstrap/.generated/`
+- one machine config per node
+- config apply to the currently reachable VM addresses reported by the Proxmox guest agent
 - `talosctl bootstrap` on the first control-plane node
 - `talosctl kubeconfig` into `02-bootstrap/.generated/kubeconfig`
 - Talos and Kubernetes readiness checks
 
-Then fetch kubeconfig and inspect the cluster:
+### `03-infrastructure`
 
-```bash
-export KUBECONFIG="$(pwd)/02-bootstrap/.generated/kubeconfig"
-kubectl get nodes
-```
+This stage is the GitOps-managed platform layer.
 
-## Planned Next Layers
+Right now the repository contains:
 
-- `03-infrastructure` will bootstrap Flux CD and reconcile platform components such as Traefik, cert-manager, and Longhorn.
-- `04-apps` is reserved for example applications or concrete workloads that should stay separate from the platform layer.
+- cluster-specific Flux bootstrap output under `03-infrastructure/clusters/`
+- shared infrastructure components under `03-infrastructure/infrastructure/`
+- a minimal Traefik base as the first platform component
 
-## Flux Bootstrap
+### `04-apps`
 
-Flux bootstrap writes its own manifests into this repository under:
+This stage is reserved for workloads that should remain separate from the shared platform layer.
+
+## 🔁 Flux Bootstrap
+
+Flux bootstrap writes cluster-specific manifests into:
 
 ```text
 03-infrastructure/clusters/<cluster_name>/
 ```
-
-The repository already contains the stage skeleton:
-
-- `03-infrastructure/clusters/` for cluster-specific Flux bootstrap output
-- `03-infrastructure/infrastructure/` for shared platform components managed by Flux
-- `04-apps/` for example or user workloads
 
 The `just install-flux` command:
 
@@ -147,27 +237,37 @@ Required environment variable:
 export GITHUB_TOKEN='<github-pat>'
 ```
 
-Optional overrides if the `origin` remote should not be used:
+Optional overrides:
 
 ```bash
 just install-flux owner=<github-owner> repo=<github-repo> branch=main cluster=<cluster-name>
 ```
 
-## Dependency Updates
-
-Renovate is configured via [renovate.json5](/Users/steffen/projects/proxmox-talos/renovate.json5).
-
-This repository is intended to use the hosted Renovate GitHub App, not a self-hosted GitHub Actions workflow. Once the Renovate App is enabled for this repository, it will read `renovate.json5` automatically.
-
-After bootstrap, you can force an immediate reconciliation with:
+After bootstrap, you can trigger reconciliation manually:
 
 ```bash
 just reconcile-flux
 ```
 
-## Notes
+## 🛠️ Requirements
+
+- A Talos raw image is already available in the configured Proxmox datastore.
+- The Talos boot image includes `qemu-guest-agent`.
+- The installer image matches the raw image build and Talos version.
+- Your IP plan and `api_vip` fit your network.
+
+The guest agent is required because the bootstrap stage discovers each VM's initial DHCP address before Talos switches the node to its final static IP.
+
+## 📝 Operational Notes
 
 - `talos_installer_image` must match the raw image build. If the raw image contains extensions such as `siderolabs/qemu-guest-agent`, the installer image must contain the same extensions.
 - `talos_version` should match the Talos version of the raw and installer images.
 - `talos_install_disk` defaults to `/dev/sda`. If your imported disk appears as a different device, update `cluster.tfvars` before running `just bootstrap-cluster`.
+- `worker_data_disk_size_gb` defaults to `100`. Worker nodes receive an additional `scsi1` disk of this size, and Talos provisions it as a `UserVolumeConfig` named `longhorn`.
 - `just bootstrap-cluster` relies on guest-agent-discovered IPv4 addresses from `01-provision`. If those are missing, the boot image likely does not start `qemu-guest-agent`.
+
+## 🔄 Dependency Updates
+
+Renovate is configured via [renovate.json5](/Users/steffen/projects/proxmox-talos/renovate.json5).
+
+This repository is intended to use the hosted Renovate GitHub App, not a self-hosted GitHub Actions workflow. Once the Renovate App is enabled for this repository, it will read `renovate.json5` automatically.

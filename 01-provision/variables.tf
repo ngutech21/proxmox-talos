@@ -208,6 +208,17 @@ variable "vm_disk_size_gb" {
   }
 }
 
+variable "worker_data_disk_size_gb" {
+  description = "Optional additional data disk size in GB for worker nodes. Set to 0 to disable the extra Longhorn disk."
+  type        = number
+  default     = 100
+
+  validation {
+    condition     = var.worker_data_disk_size_gb >= 0
+    error_message = "worker_data_disk_size_gb must be greater than or equal to 0."
+  }
+}
+
 variable "vm_network_bridge" {
   description = "Bridge to attach the VM NIC to"
   type        = string

@@ -15,6 +15,8 @@ terraform {
 }
 
 locals {
+  longhorn_mount_path = "/var/mnt/longhorn"
+
   enabled_nodes = [
     for node in var.cluster_nodes : merge(node, {
       enabled = try(node.enabled, true)
@@ -99,7 +101,18 @@ locals {
             ]
           }
         },
-        {}
+        node.role == "worker" && var.worker_data_disk_size_gb > 0 ? {
+          kubelet = {
+            extraMounts = [
+              {
+                destination = local.longhorn_mount_path
+                type        = "bind"
+                source      = local.longhorn_mount_path
+                options     = ["bind", "rshared", "rw"]
+              }
+            ]
+          }
+        } : {}
       )
 
       cluster = {
@@ -108,6 +121,26 @@ locals {
         }
       }
     })
+  }
+}
+
+locals {
+  longhorn_volume_documents = {
+    for name, node in local.nodes_by_name : name => (
+      node.role == "worker" && var.worker_data_disk_size_gb > 0 ? yamlencode({
+        apiVersion = "v1alpha1"
+        kind       = "UserVolumeConfig"
+        name       = "longhorn"
+        provisioning = {
+          diskSelector = {
+            match = "!system_disk"
+          }
+          minSize = "${var.worker_data_disk_size_gb}GiB"
+          maxSize = "${var.worker_data_disk_size_gb}GiB"
+          grow    = false
+        }
+      }) : null
+    )
   }
 }
 
@@ -157,6 +190,16 @@ data "talos_client_configuration" "cluster" {
   nodes                = [local.bootstrap_node.ip]
 }
 
+locals {
+  rendered_machine_configuration = {
+    for name, config in data.talos_machine_configuration.node :
+    name => join("\n---\n", compact([
+      config.machine_configuration,
+      local.longhorn_volume_documents[name],
+    ]))
+  }
+}
+
 resource "talos_machine_configuration_apply" "node" {
   for_each = local.nodes_by_name
 
@@ -165,7 +208,7 @@ resource "talos_machine_configuration_apply" "node" {
   ]
 
   client_configuration        = talos_machine_secrets.cluster.client_configuration
-  machine_configuration_input = data.talos_machine_configuration.node[each.key].machine_configuration
+  machine_configuration_input = local.rendered_machine_configuration[each.key]
   apply_mode                  = "reboot"
   endpoint                    = local.bootstrap_endpoints[each.key]
   node                        = local.bootstrap_endpoints[each.key]
@@ -179,7 +222,7 @@ resource "talos_machine_configuration_apply" "node" {
 resource "local_sensitive_file" "machine_config" {
   for_each = data.talos_machine_configuration.node
 
-  content  = each.value.machine_configuration
+  content  = local.rendered_machine_configuration[each.key]
   filename = "${path.module}/.generated/${each.key}.yaml"
 }
 
