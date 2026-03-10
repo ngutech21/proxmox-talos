@@ -18,6 +18,8 @@ The first planned platform component is Traefik.
 Current structure:
 
 - `clusters/talos-homelab/infrastructure.yaml`
-  cluster-specific Flux `Kustomization` that points at the shared Traefik base
+  cluster-specific Flux `Kustomization` objects that point at the shared Traefik and Longhorn bases
 - `infrastructure/traefik/`
   minimal Traefik install via `HelmRepository` and `HelmRelease`
+- `infrastructure/longhorn/`
+  minimal Longhorn install via `HelmRepository` and `HelmRelease`, using `/var/mnt/longhorn` as `defaultDataPath`
