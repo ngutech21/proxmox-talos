@@ -18,7 +18,11 @@ The first planned platform component is Traefik.
 Current structure:
 
 - `clusters/talos-homelab/infrastructure.yaml`
-  cluster-specific Flux `Kustomization` objects that point at the shared Traefik and Longhorn bases
+  cluster-specific Flux `Kustomization` objects that point at the shared MetalLB, Traefik, and Longhorn bases
+- `clusters/talos-homelab/metallb/`
+  cluster-specific MetalLB address-pool configuration for the homelab LAN
+- `infrastructure/metallb/`
+  minimal MetalLB install via `HelmRepository` and `HelmRelease`
 - `infrastructure/traefik/`
   minimal Traefik install via `HelmRepository` and `HelmRelease`
 - `infrastructure/longhorn/`

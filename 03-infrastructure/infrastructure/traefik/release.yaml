@@ -19,6 +19,11 @@ spec:
         namespace: flux-system
   values:
     deployment:
-      replicas: 2
+      replicas: 3
     service:
-      type: NodePort
+      enabled: true
+      type: LoadBalancer
+    ingressClass:
+      enabled: true
+      isDefaultClass: true
+      name: traefik

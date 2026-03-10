@@ -1,9 +1,43 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
+  name: infrastructure-metallb
+  namespace: flux-system
+spec:
+  interval: 10m0s
+  path: ./03-infrastructure/infrastructure/metallb
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  timeout: 10m0s
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infrastructure-metallb-config
+  namespace: flux-system
+spec:
+  dependsOn:
+  - name: infrastructure-metallb
+  interval: 10m0s
+  path: ./03-infrastructure/clusters/talos-homelab/metallb
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  timeout: 5m0s
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
   name: infrastructure-traefik
   namespace: flux-system
 spec:
+  dependsOn:
+  - name: infrastructure-metallb-config
   interval: 10m0s
   path: ./03-infrastructure/infrastructure/traefik
   prune: true
