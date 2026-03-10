@@ -5,7 +5,12 @@ Declarative Talos-on-Proxmox homelab platform with a clear split between infrast
 The current workflow uses two Terraform stages:
 
 - `01-provision` creates Talos VMs on Proxmox from an existing raw image.
-- `02-talos` uses the official Talos Terraform provider to generate machine configs, apply them, bootstrap the cluster, and write `talosconfig` plus `kubeconfig`.
+- `02-bootstrap` uses the official Talos Terraform provider to generate machine configs, apply them, bootstrap the cluster, and write `talosconfig` plus `kubeconfig`.
+
+The next planned layers are:
+
+- `03-infrastructure` for Flux CD bootstrap and cluster-wide platform services like ingress, certificates, and storage
+- `04-apps` for example workloads or concrete user applications
 
 The Talos boot image must include `qemu-guest-agent`, because the bootstrap stage discovers each VM's initial DHCP address through the Proxmox guest agent before Talos switches the node onto its final static IP.
 
@@ -27,7 +32,7 @@ The Talos boot image must include `qemu-guest-agent`, because the bootstrap stag
    just provision-vms
    ```
 
-5. Bootstrap Talos and write `02-talos/.generated/kubeconfig`:
+5. Bootstrap Talos and write `02-bootstrap/.generated/kubeconfig`:
 
    ```bash
    just bootstrap-cluster
@@ -73,7 +78,7 @@ proxmox_api_token_secret = "00000000-0000-0000-0000-000000000000"
 
 ## Talos Bootstrap
 
-The second stage reuses the same `cluster.tfvars`, reads the current VM addresses from `01-provision` state, and writes Talos artifacts into `02-talos/.generated/`.
+The second stage reuses the same `cluster.tfvars`, reads the current VM addresses from `01-provision` state, and writes Talos artifacts into `02-bootstrap/.generated/`.
 
 Commands:
 
@@ -89,14 +94,19 @@ just print-cluster-info
 - one machine config per node with static IP, gateway, DNS, hostname, install disk, installer image, and control-plane VIP
 - config apply to the currently reachable VM addresses reported by Proxmox guest agent
 - cluster bootstrap on the first control-plane node
-- `talosconfig` and `kubeconfig` written to `02-talos/.generated/`
+- `talosconfig` and `kubeconfig` written to `02-bootstrap/.generated/`
 
 Then fetch kubeconfig and inspect the cluster:
 
 ```bash
-export KUBECONFIG="$(pwd)/02-talos/.generated/kubeconfig"
+export KUBECONFIG="$(pwd)/02-bootstrap/.generated/kubeconfig"
 kubectl get nodes
 ```
+
+## Planned Next Layers
+
+- `03-infrastructure` will bootstrap Flux CD and reconcile platform components such as Traefik, cert-manager, and Longhorn.
+- `04-apps` is reserved for example applications or concrete workloads that should stay separate from the platform layer.
 
 ## Notes
 

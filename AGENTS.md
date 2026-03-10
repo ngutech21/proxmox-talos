@@ -6,18 +6,18 @@ This project builds a reproducible Kubernetes platform on top of Proxmox using:
 
 - `Terraform` for VM provisioning
 - `Talos` for the node OS and Kubernetes bootstrap
-- `Argo CD` for cluster services and application delivery
+- `Flux CD` for cluster services and application delivery
 
 The goal is to keep the workflow simple, declarative, and opinionated:
 
 - describe the cluster once
 - create the VMs with Terraform
 - bootstrap Talos with `talosctl`
-- let Argo CD install and reconcile platform services and apps
+- let Flux CD install and reconcile platform services and apps
 
 ## Architecture Rules
 
-- Treat `Terraform`, `Talos`, and `Argo CD` as separate layers with clear responsibilities.
+- Treat `Terraform`, `Talos`, and `Flux CD` as separate layers with clear responsibilities.
 - Do not mix Talos bootstrap logic into Terraform unless there is a very strong reason.
 - Do not use Kubernetes-in-cluster infrastructure operators in the MVP.
 - Keep the first version focused on a single Talos cluster on Proxmox, not self-hosted KaaS.
@@ -53,9 +53,9 @@ Terraform should not be the main place for:
 - Kubernetes upgrades
 - day-2 Talos operations
 
-### Argo CD
+### Flux CD
 
-Argo CD is responsible for platform and app delivery after the cluster exists:
+Flux CD is responsible for platform and app delivery after the cluster exists:
 
 - platform controllers
 - ingress or gateway stack
@@ -64,7 +64,7 @@ Argo CD is responsible for platform and app delivery after the cluster exists:
 - app operators
 - user workloads
 
-Argo CD should not be required for the initial Talos bootstrap.
+Flux CD should not be required for the initial Talos bootstrap.
 
 ## MVP Scope
 
@@ -76,13 +76,13 @@ The first version should stay intentionally small:
 - Talos API VIP for the Kubernetes API endpoint
 - `talosctl bootstrap`
 - kubeconfig retrieval
-- Argo CD installation
+- Flux CD installation
 - one ingress solution
 - one storage solution
 
 Good default MVP targets:
 
-- `Argo CD`
+- `Flux CD`
 - `Traefik` as initial ingress controller
 - `cert-manager`
 - `Longhorn`
@@ -99,10 +99,10 @@ Good default MVP targets:
 
 ## Recommended Delivery Model
 
-- Bootstrap Argo CD after Talos is up.
-- Access Argo CD initially with `kubectl port-forward`.
-- Install Traefik after Argo CD if needed.
-- Expose Argo CD through ingress only after the ingress layer exists.
+- Bootstrap Flux CD after Talos is up.
+- Access Flux components initially with `kubectl port-forward` if a UI is needed later, but do not require ingress for the first bootstrap.
+- Install Traefik after Flux CD if needed.
+- Expose workloads through ingress only after the ingress layer exists.
 
 ## Design Preferences
 
@@ -122,9 +122,8 @@ The new project should likely expose commands similar to:
 - `just init-config`
 - `just doctor`
 - `just provision-vms`
-- `just talos-config`
-- `just talos-bootstrap`
-- `just install-argocd`
+- `just bootstrap-cluster`
+- `just install-flux`
 - `just install-platform`
 - `just print-cluster-info`
 
@@ -145,8 +144,8 @@ Before committing changes:
 - The root `README.md` must explain the benefit of the project before the internal implementation details.
 - Show a declarative cluster config example early in the README.
 - Make the quick-start path obvious.
-- Explain clearly what Terraform does, what Talos does, and what Argo CD does.
-- Document that Argo CD can be installed before ingress and reached by port-forward first.
+- Explain clearly what Terraform does, what Talos does, and what Flux CD does.
+- Document that Flux CD can be installed before ingress and that platform reconciliation does not require ingress to exist first.
 
 ## Product Positioning
 
@@ -156,4 +155,3 @@ It should be positioned as:
 - a reproducible Talos-on-Proxmox homelab platform
 - a clean learning path for Talos and GitOps
 - a simpler alternative to hand-rolled Proxmox + Kubernetes glue
-

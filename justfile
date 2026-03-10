@@ -6,7 +6,7 @@ cluster_secrets := "cluster.secrets.tfvars"
 cluster_secrets_example := "cluster.secrets.tfvars.example"
 provision_plan_path := "tfplan"
 talos_plan_path := "tfplan"
-generated_dir := "02-talos/.generated"
+generated_dir := "02-bootstrap/.generated"
 
 default:
     @just --list
@@ -44,15 +44,15 @@ provision-apply:
 provision-refresh:
     terraform apply -refresh-only -auto-approve -var-file="../{{cluster_config}}" -var-file="../{{cluster_secrets}}"
 
-[private, working-directory: '02-talos']
+[private, working-directory: '02-bootstrap']
 talos-init:
     terraform init
 
-[private, working-directory: '02-talos']
+[private, working-directory: '02-bootstrap']
 talos-plan:
     terraform plan -var-file="../{{cluster_config}}" -var-file="../{{cluster_secrets}}" -out="{{talos_plan_path}}"
 
-[private, working-directory: '02-talos']
+[private, working-directory: '02-bootstrap']
 talos-apply:
     terraform apply "{{talos_plan_path}}"
     
@@ -65,9 +65,11 @@ kubeconfig:
     if [ ! -f "{{generated_dir}}/kubeconfig" ]; then echo "Missing {{generated_dir}}/kubeconfig. Run 'just bootstrap-cluster' first." >&2; exit 1; fi
     printf '%s\n' "$$(pwd)/{{generated_dir}}/kubeconfig"
 
-[private, working-directory: '02-talos']
-print-cluster-info:
+[private, working-directory: '02-bootstrap']
+bootstrap-output-cluster-info:
     terraform output cluster_info
+
+print-cluster-info: bootstrap-output-cluster-info
 
 [working-directory: '01-provision']
 destroy-cluster:
