@@ -60,11 +60,11 @@ jobs:
       - name: Lint 01-provision
         working-directory: 01-provision
         run: |
-          tflint --init --config=../.tflint.hcl
-          tflint --config=../.tflint.hcl
+          tflint --init --config=.tflint.hcl
+          tflint --config=.tflint.hcl
 
       - name: Lint 02-bootstrap
         working-directory: 02-bootstrap
         run: |
-          tflint --init --config=../.tflint.hcl
-          tflint --config=../.tflint.hcl
+          tflint --init --config=.tflint.hcl
+          tflint --config=.tflint.hcl

@@ -69,10 +69,21 @@ talos-plan:
 talos-apply:
     terraform apply "{{talos_plan_path}}"
     
+[private, working-directory: '01-provision']
+tflint-provision:
+    tflint --init --config=.tflint.hcl
+    tflint --config=.tflint.hcl
+
+[private, working-directory: '02-bootstrap']
+tflint-bootstrap:
+    tflint --init --config=.tflint.hcl
+    tflint --config=.tflint.hcl
 
 provision-vms: require-config provision-init provision-plan provision-apply
 
 bootstrap-cluster: require-config ensure-generated-dir provision-init provision-refresh talos-init talos-plan talos-apply
+
+tflint: tflint-provision tflint-bootstrap
 
 kubeconfig: require-kubeconfig
     printf '%s\n' "$$(pwd)/{{generated_dir}}/kubeconfig"
