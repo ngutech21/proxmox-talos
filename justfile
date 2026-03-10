@@ -71,12 +71,10 @@ talos-apply:
     
 [private, working-directory: '01-provision']
 tflint-provision:
-    tflint --init --config=.tflint.hcl
     tflint --config=.tflint.hcl
 
 [private, working-directory: '02-bootstrap']
 tflint-bootstrap:
-    tflint --init --config=.tflint.hcl
     tflint --config=.tflint.hcl
 
 provision-vms: require-config provision-init provision-plan provision-apply
