@@ -83,6 +83,7 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
     size         = each.value.disk_gb
     discard      = "on"
     iothread     = true
+    ssd          = true
   }
 
   network_device {
@@ -91,6 +92,10 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
   }
 
   serial_device {}
+
+  rng {
+    source = "/dev/urandom"
+  }
 
   lifecycle {
     precondition {
