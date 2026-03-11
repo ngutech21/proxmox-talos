@@ -38,3 +38,7 @@ vm_dns_servers = ["192.168.178.1", "1.1.1.1"]
 
 # Platform networking
 metallb_addresses = ["192.168.178.240-192.168.178.249"]
+
+# App defaults
+base_domain          = "home.arpa"
+pgadmin_storage_size = "5Gi"

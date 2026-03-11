@@ -151,6 +151,10 @@ vm_tags                  = ["homelab"]
 
 vm_gateway     = "192.168.178.1"
 vm_dns_servers = ["192.168.178.1", "1.1.1.1"]
+
+metallb_addresses     = ["192.168.178.240-192.168.178.249"]
+base_domain           = "home.arpa"
+pgadmin_storage_size  = "5Gi"
 ```
 
 Secrets live separately in `cluster.secrets.tfvars`:

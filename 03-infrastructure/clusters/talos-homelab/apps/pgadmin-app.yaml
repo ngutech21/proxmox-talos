@@ -7,7 +7,7 @@ spec:
   dependsOn:
   - name: infrastructure-longhorn
   interval: 10m0s
-  path: ./03-infrastructure/apps/pgadmin
+  path: ./03-infrastructure/clusters/talos-homelab/.generated/pgadmin
   prune: true
   sourceRef:
     kind: GitRepository

@@ -39,6 +39,7 @@ ensure-cluster-generated-dirs: require-config
       exit 1
     fi
     mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/metallb"
+    mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/pgadmin"
 
 [private]
 require-kubeconfig:
@@ -96,7 +97,9 @@ talos-generate:
       -target=local_sensitive_file.machine_config \
       -target=local_sensitive_file.talosconfig \
       -target=local_file.metallb_ip_address_pool \
-      -target=local_file.metallb_generated_kustomization
+      -target=local_file.metallb_generated_kustomization \
+      -target=local_file.pgadmin_values_patch \
+      -target=local_file.pgadmin_generated_kustomization
 
 [private, working-directory: '02-bootstrap']
 talos-destroy:

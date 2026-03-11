@@ -19,8 +19,6 @@ spec:
         namespace: flux-system
   values:
     existingSecret: pgadmin-credentials
-    env:
-      email: pgadmin@home.arpa
     service:
       type: ClusterIP
       port: 80

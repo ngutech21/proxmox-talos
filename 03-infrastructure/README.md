@@ -32,5 +32,7 @@ Current structure:
   and exposing the UI through Traefik at `longhorn.home.arpa`
 - `apps/pgadmin/`
   pgAdmin 4 as a concrete app workload, using Longhorn for persistence and Traefik ingress at `pgadmin.home.arpa`
+- `clusters/<cluster-name>/.generated/pgadmin/`
+  cluster-specific generated overlay for pgAdmin values such as ingress host and PVC size
 - `smoke-tests/longhorn/`
   manual PVC+Pod validation for Longhorn, intended to be applied with `kubectl apply -k` or `just smoke-longhorn-apply`

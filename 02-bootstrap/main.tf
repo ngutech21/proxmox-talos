@@ -18,6 +18,7 @@ locals {
   longhorn_mount_path   = "/var/mnt/longhorn"
   cluster_generated_dir = "${path.module}/../03-infrastructure/clusters/${var.cluster_name}/.generated"
   metallb_generated_dir = "${local.cluster_generated_dir}/metallb"
+  pgadmin_generated_dir = "${local.cluster_generated_dir}/pgadmin"
 
   enabled_nodes = [
     for node in var.cluster_nodes : merge(node, {
@@ -220,6 +221,49 @@ locals {
       "ip-address-pool.yaml",
     ]
   })
+
+  pgadmin_values_patch = yamlencode({
+    apiVersion = "helm.toolkit.fluxcd.io/v2"
+    kind       = "HelmRelease"
+    metadata = {
+      name      = "pgadmin"
+      namespace = "flux-system"
+    }
+    spec = {
+      values = {
+        env = {
+          email = "pgadmin@${var.base_domain}"
+        }
+        persistentVolume = {
+          size = var.pgadmin_storage_size
+        }
+        ingress = {
+          hosts = [
+            {
+              host = "pgadmin.${var.base_domain}"
+              paths = [
+                {
+                  path     = "/"
+                  pathType = "Prefix"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  })
+
+  pgadmin_generated_kustomization = yamlencode({
+    apiVersion = "kustomize.config.k8s.io/v1beta1"
+    kind       = "Kustomization"
+    resources = [
+      "../../../../apps/pgadmin",
+    ]
+    patchesStrategicMerge = [
+      "values-patch.yaml",
+    ]
+  })
 }
 
 resource "talos_machine_configuration_apply" "node" {
@@ -261,4 +305,14 @@ resource "local_file" "metallb_ip_address_pool" {
 resource "local_file" "metallb_generated_kustomization" {
   content  = local.metallb_generated_kustomization
   filename = "${local.metallb_generated_dir}/kustomization.yaml"
+}
+
+resource "local_file" "pgadmin_values_patch" {
+  content  = local.pgadmin_values_patch
+  filename = "${local.pgadmin_generated_dir}/values-patch.yaml"
+}
+
+resource "local_file" "pgadmin_generated_kustomization" {
+  content  = local.pgadmin_generated_kustomization
+  filename = "${local.pgadmin_generated_dir}/kustomization.yaml"
 }

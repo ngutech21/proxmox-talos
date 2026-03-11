@@ -99,6 +99,17 @@ variable "talos_dns_domain" {
   }
 }
 
+variable "base_domain" {
+  description = "Base domain used for ingress hosts and app-local email addresses"
+  type        = string
+  default     = "home.arpa"
+
+  validation {
+    condition     = trimspace(var.base_domain) != ""
+    error_message = "base_domain must not be empty."
+  }
+}
+
 variable "cluster_nodes" {
   description = "Explicit Talos node definitions shared with the provisioning stage"
   type = list(object({
@@ -218,5 +229,16 @@ variable "metallb_addresses" {
   validation {
     condition     = length(var.metallb_addresses) > 0
     error_message = "metallb_addresses must contain at least one address range."
+  }
+}
+
+variable "pgadmin_storage_size" {
+  description = "Persistent volume size for the pgAdmin workload"
+  type        = string
+  default     = "5Gi"
+
+  validation {
+    condition     = trimspace(var.pgadmin_storage_size) != ""
+    error_message = "pgadmin_storage_size must not be empty."
   }
 }
