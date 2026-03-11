@@ -46,7 +46,7 @@ Today, this repository builds the foundation of a Talos-based Kubernetes platfor
 | Infrastructure | `Terraform` | Talos virtual machines on Proxmox with declared CPU, memory, disks, placement, VM IDs, and networking metadata |
 | Cluster bootstrap | `Talos` | Machine configs, static node networking, control-plane VIP config, cluster bootstrap, `talosconfig`, and `kubeconfig` |
 | GitOps entrypoint | `Flux` | GitOps bootstrap into the cluster and repo structure under `03-infrastructure/` |
-| Platform skeleton | `Flux` manifests | Shared infrastructure layout and a minimal Traefik base for later platform delivery |
+| Platform layer | `Flux` manifests | Shared infrastructure components for MetalLB, Traefik, and Longhorn |
 
 Current repository stages:
 
@@ -110,6 +110,9 @@ If worker data disks are configured, worker nodes also get a Talos `UserVolumeCo
    just install-flux
    ```
 
+   This also activates the GitOps-managed infrastructure layer under `03-infrastructure/`,
+   which reconciles shared platform components such as MetalLB, Traefik, and Longhorn.
+
 ## 🧱 Declarative Cluster Config
 
 The main user-edited file is `cluster.tfvars`.
@@ -126,7 +129,7 @@ api_vip      = "192.168.178.50"
 talos_image_datastore = "local"
 talos_image_filename  = "talos-nocloud-amd64.raw"
 talos_install_disk    = "/dev/sda"
-talos_installer_image = "factory.talos.dev/installer/<schematic-id>:v1.12.4"
+talos_installer_image = "factory.talos.dev/installer/<schematic-id>:v1.12.5"
 talos_version         = "v1.12.5"
 talos_dns_domain      = "cluster.local"
 
@@ -210,7 +213,9 @@ Right now the repository contains:
 
 - cluster-specific Flux bootstrap output under `03-infrastructure/clusters/`
 - shared infrastructure components under `03-infrastructure/infrastructure/`
-- a minimal Traefik base as the first platform component
+- MetalLB for `LoadBalancer` services
+- Traefik as the ingress controller
+- Longhorn as the storage layer
 
 ### `04-apps`
 
@@ -242,6 +247,8 @@ Optional overrides:
 ```bash
 just install-flux owner=<github-owner> repo=<github-repo> branch=main cluster=<cluster-name>
 ```
+
+The default branch used by `just install-flux` is currently `master`. Pass `branch=main` explicitly if your repository uses `main`.
 
 After bootstrap, you can trigger reconciliation manually:
 
