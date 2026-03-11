@@ -30,6 +30,17 @@ ensure-generated-dir:
     mkdir -p "{{generated_dir}}"
 
 [private]
+ensure-cluster-generated-dirs: require-config
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cluster_name="$(sed -nE 's/^cluster_name[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' "{{cluster_config}}" | head -n1)"
+    if [ -z "$cluster_name" ]; then
+      echo "Could not determine cluster_name from {{cluster_config}}." >&2
+      exit 1
+    fi
+    mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/metallb"
+
+[private]
 require-kubeconfig:
     if [ ! -f "{{generated_dir}}/kubeconfig" ]; then echo "Missing {{generated_dir}}/kubeconfig. Run 'just bootstrap-cluster' first." >&2; exit 1; fi
 
@@ -78,6 +89,16 @@ talos-apply:
     terraform apply "{{talos_plan_path}}"
 
 [private, working-directory: '02-bootstrap']
+talos-generate:
+    terraform apply -auto-approve \
+      -var-file="../{{cluster_config}}" \
+      -var-file="../{{cluster_secrets}}" \
+      -target=local_sensitive_file.machine_config \
+      -target=local_sensitive_file.talosconfig \
+      -target=local_file.metallb_ip_address_pool \
+      -target=local_file.metallb_generated_kustomization
+
+[private, working-directory: '02-bootstrap']
 talos-destroy:
     terraform destroy -var-file="../{{cluster_config}}" -var-file="../{{cluster_secrets}}"
     
@@ -92,7 +113,9 @@ tflint-bootstrap:
 provision-vms: require-config provision-init provision-plan provision-apply
 
 [private]
-bootstrap-apply: require-config ensure-generated-dir provision-init provision-refresh talos-init talos-plan talos-apply
+bootstrap-apply: require-config ensure-generated-dir ensure-cluster-generated-dirs provision-init provision-refresh talos-init talos-plan talos-apply
+
+generate-artifacts: require-config ensure-generated-dir ensure-cluster-generated-dirs talos-init talos-generate
 
 [private]
 bootstrap-etcd: require-talosconfig

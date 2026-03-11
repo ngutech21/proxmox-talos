@@ -268,3 +268,9 @@ variable "vm_tags" {
   type        = list(string)
   default     = []
 }
+
+variable "metallb_addresses" {
+  description = "MetalLB address ranges, declared here so the shared tfvars file can be reused across both Terraform stages"
+  type        = list(string)
+  default     = []
+}

@@ -15,7 +15,9 @@ terraform {
 }
 
 locals {
-  longhorn_mount_path = "/var/mnt/longhorn"
+  longhorn_mount_path   = "/var/mnt/longhorn"
+  cluster_generated_dir = "${path.module}/../03-infrastructure/clusters/${var.cluster_name}/.generated"
+  metallb_generated_dir = "${local.cluster_generated_dir}/metallb"
 
   enabled_nodes = [
     for node in var.cluster_nodes : merge(node, {
@@ -198,6 +200,28 @@ locals {
   }
 }
 
+locals {
+  metallb_ip_address_pool = yamlencode({
+    apiVersion = "metallb.io/v1beta1"
+    kind       = "IPAddressPool"
+    metadata = {
+      name      = "lan-pool"
+      namespace = "metallb-system"
+    }
+    spec = {
+      addresses = var.metallb_addresses
+    }
+  })
+
+  metallb_generated_kustomization = yamlencode({
+    apiVersion = "kustomize.config.k8s.io/v1beta1"
+    kind       = "Kustomization"
+    resources = [
+      "ip-address-pool.yaml",
+    ]
+  })
+}
+
 resource "talos_machine_configuration_apply" "node" {
   for_each = local.nodes_by_name
 
@@ -227,4 +251,14 @@ resource "local_sensitive_file" "machine_config" {
 resource "local_sensitive_file" "talosconfig" {
   content  = data.talos_client_configuration.cluster.talos_config
   filename = "${path.module}/.generated/talosconfig"
+}
+
+resource "local_file" "metallb_ip_address_pool" {
+  content  = local.metallb_ip_address_pool
+  filename = "${local.metallb_generated_dir}/ip-address-pool.yaml"
+}
+
+resource "local_file" "metallb_generated_kustomization" {
+  content  = local.metallb_generated_kustomization
+  filename = "${local.metallb_generated_dir}/kustomization.yaml"
 }

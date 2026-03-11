@@ -210,3 +210,13 @@ variable "vm_tags" {
   type        = list(string)
   default     = []
 }
+
+variable "metallb_addresses" {
+  description = "MetalLB address ranges for the cluster-specific IPAddressPool"
+  type        = list(string)
+
+  validation {
+    condition     = length(var.metallb_addresses) > 0
+    error_message = "metallb_addresses must contain at least one address range."
+  }
+}

@@ -192,6 +192,7 @@ Useful commands:
 
 ```bash
 just bootstrap-cluster
+just generate-artifacts
 just kubeconfig
 just print-cluster-info
 ```
@@ -204,6 +205,14 @@ just print-cluster-info
 - `talosctl bootstrap` on the first control-plane node
 - `talosctl kubeconfig` into `02-bootstrap/.generated/kubeconfig`
 - Talos and Kubernetes readiness checks
+
+`just generate-artifacts` only refreshes the locally generated Terraform artifacts from `02-bootstrap`, such as:
+
+- `02-bootstrap/.generated/talosconfig`
+- per-node machine configs under `02-bootstrap/.generated/`
+- generated cluster-local manifests under `03-infrastructure/clusters/<cluster-name>/.generated/`
+
+Use it when you change generated inputs like the MetalLB address pool or Talos config patches and want to refresh the rendered files without re-running cluster bootstrap.
 
 ### `03-infrastructure`
 
