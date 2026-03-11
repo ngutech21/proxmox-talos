@@ -1,0 +1,13 @@
+- op: add
+  path: /spec/values/prometheus/ingress
+  value:
+    enabled: true
+    ingressClassName: traefik
+    hosts:
+    - prometheus.home.arpa
+    paths:
+    - /
+    pathType: Prefix
+- op: add
+  path: /spec/values/prometheus/prometheusSpec/externalUrl
+  value: http://prometheus.home.arpa

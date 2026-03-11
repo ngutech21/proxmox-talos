@@ -39,6 +39,8 @@ ensure-cluster-generated-dirs: require-config
       exit 1
     fi
     mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/metallb"
+    mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/observability"
+    mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/pgadmin"
     mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/pgadmin"
 
 [private]

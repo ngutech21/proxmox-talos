@@ -242,3 +242,9 @@ variable "pgadmin_storage_size" {
     error_message = "pgadmin_storage_size must not be empty."
   }
 }
+
+variable "prometheus_host" {
+  description = "Optional ingress host for Prometheus. Leave empty to derive prometheus.<base_domain>."
+  type        = string
+  default     = ""
+}
