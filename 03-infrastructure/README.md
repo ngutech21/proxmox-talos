@@ -34,9 +34,13 @@ Current structure:
   and exposing the UI through Traefik at `longhorn.home.arpa`
 - `infrastructure/observability/`
   minimal `kube-prometheus-stack` install with Prometheus and Alertmanager enabled, but Grafana disabled so an external Grafana can be used
+- `infrastructure/alloy/`
+  minimal Grafana Alloy install that collects pod logs and forwards them to an external Loki endpoint
 - `apps/pgadmin/`
   pgAdmin 4 as a concrete app workload, using Longhorn for persistence and Traefik ingress at `pgadmin.home.arpa`
 - `clusters/<cluster-name>/.generated/pgadmin/`
   cluster-specific generated overlay for pgAdmin values such as ingress host and PVC size
+- `clusters/<cluster-name>/.generated/alloy/`
+  cluster-specific generated overlay for the Alloy config, especially the external Loki push URL and cluster label
 - `smoke-tests/longhorn/`
   manual PVC+Pod validation for Longhorn, intended to be applied with `kubectl apply -k` or `just smoke-longhorn-apply`

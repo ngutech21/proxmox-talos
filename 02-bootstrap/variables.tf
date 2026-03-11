@@ -248,3 +248,17 @@ variable "prometheus_host" {
   type        = string
   default     = ""
 }
+
+variable "loki_push_url" {
+  description = "HTTP push endpoint for the external Loki instance that should receive cluster logs"
+  type        = string
+
+  validation {
+    condition = (
+      trimspace(var.loki_push_url) != "" &&
+      can(regex("^https?://", var.loki_push_url)) &&
+      can(regex("/loki/api/v1/push$", var.loki_push_url))
+    )
+    error_message = "loki_push_url must be a non-empty http(s) URL ending in /loki/api/v1/push."
+  }
+}

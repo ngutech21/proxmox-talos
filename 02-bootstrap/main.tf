@@ -20,6 +20,7 @@ locals {
   metallb_generated_dir       = "${local.cluster_generated_dir}/metallb"
   pgadmin_generated_dir       = "${local.cluster_generated_dir}/pgadmin"
   observability_generated_dir = "${local.cluster_generated_dir}/observability"
+  alloy_generated_dir         = "${local.cluster_generated_dir}/alloy"
 
   enabled_nodes = [
     for node in var.cluster_nodes : merge(node, {
@@ -278,25 +279,120 @@ locals {
       value: http://${local.resolved_prometheus_host}
   EOT
 
-  observability_generated_kustomization = yamlencode({
-    apiVersion = "kustomize.config.k8s.io/v1beta1"
-    kind       = "Kustomization"
-    resources = [
-      "../../../../infrastructure/observability",
-    ]
-    patches = [
-      {
-        path = "values-patch.yaml"
-        target = {
-          group     = "helm.toolkit.fluxcd.io"
-          version   = "v2"
-          kind      = "HelmRelease"
-          name      = "kube-prometheus-stack"
-          namespace = "flux-system"
+  observability_generated_kustomization = <<-EOT
+    apiVersion: kustomize.config.k8s.io/v1beta1
+    kind: Kustomization
+    resources:
+    - ../../../../infrastructure/observability
+    patches:
+    - path: values-patch.yaml
+      target:
+        group: helm.toolkit.fluxcd.io
+        version: v2
+        kind: HelmRelease
+        name: kube-prometheus-stack
+        namespace: flux-system
+  EOT
+
+  alloy_values_patch = <<-EOT
+    - op: replace
+      path: /spec/values/alloy/configMap/content
+      value: |
+        logging {
+          level  = "info"
+          format = "logfmt"
         }
-      },
-    ]
-  })
+
+        discovery.kubernetes "pod" {
+          role = "pod"
+        }
+
+        discovery.relabel "pod_logs" {
+          targets = discovery.kubernetes.pod.targets
+
+          rule {
+            source_labels = ["__meta_kubernetes_namespace"]
+            action        = "replace"
+            target_label  = "namespace"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_name"]
+            action        = "replace"
+            target_label  = "pod"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_container_name"]
+            action        = "replace"
+            target_label  = "container"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_node_name"]
+            action        = "replace"
+            target_label  = "node"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+            action        = "replace"
+            target_label  = "app"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_container_name"]
+            action        = "replace"
+            target_label  = "job"
+            separator     = "/"
+            replacement   = "$1"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_container_id"]
+            action        = "replace"
+            target_label  = "container_runtime"
+            regex         = `^(\\S+):\\/\\/.+$`
+            replacement   = "$1"
+          }
+        }
+
+        loki.source.kubernetes "pod_logs" {
+          targets    = discovery.relabel.pod_logs.output
+          forward_to = [loki.process.pod_logs.receiver]
+        }
+
+        loki.process "pod_logs" {
+          stage.static_labels {
+            values = {
+              cluster = "${var.cluster_name}",
+            }
+          }
+
+          forward_to = [loki.write.external.receiver]
+        }
+
+        loki.write "external" {
+          endpoint {
+            url = "${var.loki_push_url}"
+          }
+        }
+  EOT
+
+  alloy_generated_kustomization = <<-EOT
+    apiVersion: kustomize.config.k8s.io/v1beta1
+    kind: Kustomization
+    resources:
+    - ../../../../infrastructure/alloy
+    patches:
+    - path: values-patch.yaml
+      target:
+        group: helm.toolkit.fluxcd.io
+        version: v2
+        kind: HelmRelease
+        name: alloy
+        namespace: flux-system
+  EOT
 }
 
 resource "talos_machine_configuration_apply" "node" {
@@ -358,4 +454,14 @@ resource "local_file" "observability_values_patch" {
 resource "local_file" "observability_generated_kustomization" {
   content  = local.observability_generated_kustomization
   filename = "${local.observability_generated_dir}/kustomization.yaml"
+}
+
+resource "local_file" "alloy_values_patch" {
+  content  = local.alloy_values_patch
+  filename = "${local.alloy_generated_dir}/values-patch.yaml"
+}
+
+resource "local_file" "alloy_generated_kustomization" {
+  content  = local.alloy_generated_kustomization
+  filename = "${local.alloy_generated_dir}/kustomization.yaml"
 }

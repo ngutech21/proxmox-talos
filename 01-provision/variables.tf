@@ -274,3 +274,9 @@ variable "metallb_addresses" {
   type        = list(string)
   default     = []
 }
+
+variable "loki_push_url" {
+  description = "External Loki push URL, declared here so the shared tfvars file can be reused across both Terraform stages"
+  type        = string
+  default     = ""
+}

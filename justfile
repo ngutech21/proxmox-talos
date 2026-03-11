@@ -41,7 +41,7 @@ ensure-cluster-generated-dirs: require-config
     mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/metallb"
     mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/observability"
     mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/pgadmin"
-    mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/pgadmin"
+    mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/alloy"
 
 [private]
 require-kubeconfig:
@@ -101,7 +101,11 @@ talos-generate:
       -target=local_file.metallb_ip_address_pool \
       -target=local_file.metallb_generated_kustomization \
       -target=local_file.pgadmin_values_patch \
-      -target=local_file.pgadmin_generated_kustomization
+      -target=local_file.pgadmin_generated_kustomization \
+      -target=local_file.observability_values_patch \
+      -target=local_file.observability_generated_kustomization \
+      -target=local_file.alloy_values_patch \
+      -target=local_file.alloy_generated_kustomization
 
 [private, working-directory: '02-bootstrap']
 talos-destroy:
