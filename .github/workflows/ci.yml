@@ -64,3 +64,27 @@ jobs:
       - name: Lint 02-bootstrap
         working-directory: 02-bootstrap
         run: tflint --config=.tflint.hcl
+
+  gitops:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Install kubeconform
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL -o /tmp/kubeconform.tar.gz \
+            https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+          tar -xzf /tmp/kubeconform.tar.gz -C "$HOME/.local/bin" kubeconform
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Check Flux Kustomization paths
+        run: bash scripts/check-flux-kustomization-paths.sh
+
+      - name: Validate GitOps Kustomize renders
+        run: bash scripts/validate-gitops-kustomize.sh
