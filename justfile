@@ -211,6 +211,12 @@ bootstrap-cluster: bootstrap-apply bootstrap-etcd bootstrap-kubeconfig wait-read
 
 tflint: tflint-provision tflint-bootstrap
 
+smoke-longhorn-apply: require-kubeconfig
+    kubectl --kubeconfig "{{generated_dir}}/kubeconfig" apply -k 03-infrastructure/smoke-tests/longhorn
+
+smoke-longhorn-delete: require-kubeconfig
+    kubectl --kubeconfig "{{generated_dir}}/kubeconfig" delete -k 03-infrastructure/smoke-tests/longhorn --ignore-not-found
+
 kubeconfig: require-kubeconfig
     printf '%s\n' "$$(pwd)/{{generated_dir}}/kubeconfig"
 

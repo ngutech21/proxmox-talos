@@ -28,3 +28,5 @@ Current structure:
 - `infrastructure/longhorn/`
   minimal Longhorn install via `HelmRepository` and `HelmRelease`, using `/var/mnt/longhorn` as `defaultDataPath`
   and exposing the UI through Traefik at `longhorn.home.arpa`
+- `smoke-tests/longhorn/`
+  manual PVC+Pod validation for Longhorn, intended to be applied with `kubectl apply -k` or `just smoke-longhorn-apply`
