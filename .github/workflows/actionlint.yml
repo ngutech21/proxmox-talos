@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.2
 
       - name: Lint GitHub Actions
         uses: reviewdog/action-actionlint@v1.69.0
