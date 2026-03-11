@@ -32,6 +32,8 @@ Current structure:
 - `infrastructure/longhorn/`
   minimal Longhorn install via `HelmRepository` and `HelmRelease`, using `/var/mnt/longhorn` as `defaultDataPath`
   and exposing the UI through Traefik at `longhorn.home.arpa`
+- `infrastructure/observability/`
+  minimal `kube-prometheus-stack` install with Prometheus and Alertmanager enabled, but Grafana disabled so an external Grafana can be used
 - `apps/pgadmin/`
   pgAdmin 4 as a concrete app workload, using Longhorn for persistence and Traefik ingress at `pgadmin.home.arpa`
 - `clusters/<cluster-name>/.generated/pgadmin/`

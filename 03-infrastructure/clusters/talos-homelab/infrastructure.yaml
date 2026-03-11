@@ -97,3 +97,20 @@ spec:
     name: flux-system
   timeout: 10m0s
   wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infrastructure-observability
+  namespace: flux-system
+spec:
+  dependsOn:
+  - name: infrastructure-longhorn
+  interval: 10m0s
+  path: ./03-infrastructure/infrastructure/observability
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  timeout: 10m0s
+  wait: true
