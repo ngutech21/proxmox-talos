@@ -8,6 +8,8 @@
   ],
   timezone: 'Europe/Berlin',
   dependencyDashboard: true,
+  prHourlyLimit: 0,
+  prConcurrentLimit: 0,
   rangeStrategy: 'bump',
   ignorePaths: [
     '**/.generated/**',
