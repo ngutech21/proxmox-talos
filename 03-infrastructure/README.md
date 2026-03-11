@@ -27,6 +27,8 @@ Current structure:
   minimal Traefik install via `HelmRepository` and `HelmRelease`
 - `infrastructure/cert-manager/`
   minimal cert-manager install via the official Jetstack OCI Helm chart, with CRDs enabled in the Helm release
+- `infrastructure/cloudnative-pg/`
+  minimal CloudNativePG operator install via the official `cnpg/cloudnative-pg` Helm chart in `cnpg-system`
 - `infrastructure/longhorn/`
   minimal Longhorn install via `HelmRepository` and `HelmRelease`, using `/var/mnt/longhorn` as `defaultDataPath`
   and exposing the UI through Traefik at `longhorn.home.arpa`
