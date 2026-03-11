@@ -275,6 +275,6 @@ The guest agent is required because the bootstrap stage discovers each VM's init
 
 ## 🔄 Dependency Updates
 
-Renovate is configured via [renovate.json5](/Users/steffen/projects/proxmox-talos/renovate.json5).
+Renovate is configured via [renovate.json5](./renovate.json5).
 
 This repository is intended to use the hosted Renovate GitHub App, not a self-hosted GitHub Actions workflow. Once the Renovate App is enabled for this repository, it will read `renovate.json5` automatically.
