@@ -5,6 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m0s
+  path: ./03-infrastructure/apps/hello-nginx
   prune: true
   sourceRef:
     kind: GitRepository
