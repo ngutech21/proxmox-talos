@@ -1,0 +1,17 @@
+"apiVersion": "helm.toolkit.fluxcd.io/v2"
+"kind": "HelmRelease"
+"metadata":
+  "name": "pgadmin"
+  "namespace": "flux-system"
+"spec":
+  "values":
+    "env":
+      "email": "pgadmin@home.arpa"
+    "ingress":
+      "hosts":
+      - "host": "pgadmin.home.arpa"
+        "paths":
+        - "path": "/"
+          "pathType": "Prefix"
+    "persistentVolume":
+      "size": "2Gi"
