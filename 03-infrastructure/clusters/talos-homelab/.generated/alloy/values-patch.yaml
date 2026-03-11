@@ -77,6 +77,6 @@
 
     loki.write "external" {
       endpoint {
-        url = "http://192.168.178.174:3100/loki/api/v1/push"
+        url = "http://192.168.178.196:3100/loki/api/v1/push"
       }
     }
