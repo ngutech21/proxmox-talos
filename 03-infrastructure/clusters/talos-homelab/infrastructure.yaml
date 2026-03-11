@@ -50,9 +50,28 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
+  name: infrastructure-cert-manager
+  namespace: flux-system
+spec:
+  dependsOn:
+  - name: infrastructure-traefik
+  interval: 10m0s
+  path: ./03-infrastructure/infrastructure/cert-manager
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  timeout: 10m0s
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
   name: infrastructure-longhorn
   namespace: flux-system
 spec:
+  dependsOn:
+  - name: infrastructure-cert-manager
   interval: 10m0s
   path: ./03-infrastructure/infrastructure/longhorn
   prune: true
