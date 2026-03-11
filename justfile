@@ -171,6 +171,7 @@ wait-ready: require-talosconfig require-kubeconfig
     worker_ips="$(terraform -chdir=02-bootstrap output -json worker_ips | tr -d '[]\"[:space:]')"
     talosconfig_path="$(pwd)/{{generated_dir}}/talosconfig"
     kubeconfig_path="$(pwd)/{{generated_dir}}/kubeconfig"
+    deadline=$((SECONDS + 900))
 
     health_args=(
       --talosconfig "$talosconfig_path"
@@ -184,7 +185,24 @@ wait-ready: require-talosconfig require-kubeconfig
       health_args+=(--worker-nodes "$worker_ips")
     fi
 
-    kubectl --kubeconfig "$kubeconfig_path" wait --for=condition=Ready nodes --all --timeout=15m
+    while true; do
+      if output="$(kubectl --kubeconfig "$kubeconfig_path" wait --for=condition=Ready nodes --all --timeout=60s 2>&1)"; then
+        printf '%s\n' "$output"
+        break
+      fi
+      if [ "$SECONDS" -ge "$deadline" ]; then
+        printf '%s\n' "$output" >&2
+        echo "Timed out waiting for Kubernetes nodes to become Ready" >&2
+        exit 1
+      fi
+      if printf '%s' "$output" | grep -Eqi "connection refused|EOF|i/o timeout|Unable to connect to the server|net/http: TLS handshake timeout|the server is currently unable to handle the request"; then
+        sleep 10
+        continue
+      fi
+      printf '%s\n' "$output" >&2
+      exit 1
+    done
+
     if ! talosctl health "${health_args[@]}"; then
       echo "talosctl health did not fully converge after Kubernetes became Ready; continuing" >&2
     fi
