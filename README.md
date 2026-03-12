@@ -46,7 +46,7 @@ Today, this repository builds the foundation of a Talos-based Kubernetes platfor
 | Infrastructure | `Terraform` | Talos virtual machines on Proxmox with declared CPU, memory, disks, placement, VM IDs, and networking metadata |
 | Cluster bootstrap | `Talos` | Machine configs, static node networking, control-plane VIP config, cluster bootstrap, `talosconfig`, and `kubeconfig` |
 | GitOps entrypoint | `Flux` | GitOps bootstrap into the cluster and repo structure under `03-infrastructure/` |
-| Platform layer | `Flux` manifests | Shared infrastructure components for MetalLB, Traefik, and Longhorn |
+| Platform layer | `Flux` manifests | Shared infrastructure components for MetalLB, Traefik, cert-manager, Longhorn, CloudNativePG, Prometheus, Alertmanager, and Alloy |
 
 Current repository stages:
 
@@ -64,6 +64,13 @@ After the main bootstrap flow, you have:
 - generated `02-bootstrap/.generated/talosconfig`
 - generated `02-bootstrap/.generated/kubeconfig`
 - an optional GitOps bootstrap path via Flux
+- MetalLB for `LoadBalancer` services
+- Traefik as the ingress controller
+- Longhorn as the storage layer
+- cert-manager for certificate management
+- CloudNativePG as the PostgreSQL operator
+- Prometheus and Alertmanager for metrics and alerting
+- Alloy for shipping cluster logs to an external Loki instance
 
 If worker data disks are configured, worker nodes also get a Talos `UserVolumeConfig` named `longhorn`, mounted at `/var/mnt/longhorn`.
 
@@ -111,7 +118,8 @@ If worker data disks are configured, worker nodes also get a Talos `UserVolumeCo
    ```
 
    This also activates the GitOps-managed infrastructure layer under `03-infrastructure/`,
-   which reconciles shared platform components such as MetalLB, Traefik, and Longhorn.
+   which reconciles shared platform components such as MetalLB, Traefik, cert-manager,
+   Longhorn, CloudNativePG, Prometheus, Alertmanager, and Alloy.
 
 ## 🧱 Declarative Cluster Config
 
@@ -155,6 +163,8 @@ vm_dns_servers = ["192.168.178.1", "1.1.1.1"]
 metallb_addresses     = ["192.168.178.240-192.168.178.249"]
 base_domain           = "home.arpa"
 pgadmin_storage_size  = "5Gi"
+prometheus_host       = "prometheus.home.arpa"
+loki_push_url         = "http://loki.home.arpa:3100/loki/api/v1/push"
 ```
 
 Secrets live separately in `cluster.secrets.tfvars`:
@@ -229,6 +239,10 @@ Right now the repository contains:
 - MetalLB for `LoadBalancer` services
 - Traefik as the ingress controller
 - Longhorn as the storage layer
+- cert-manager for certificate management
+- CloudNativePG as the PostgreSQL operator
+- Prometheus and Alertmanager via `kube-prometheus-stack`
+- Alloy for forwarding cluster logs to an external Loki instance
 
 ### `04-apps`
 
@@ -269,6 +283,22 @@ After bootstrap, you can trigger reconciliation manually:
 just reconcile-flux
 ```
 
+When you change generated GitOps inputs such as:
+
+- `metallb_addresses`
+- `prometheus_host`
+- `loki_push_url`
+- generated app hostnames or storage sizes
+
+refresh the generated artifacts first:
+
+```bash
+just generate-artifacts
+```
+
+Then commit the updated files under `03-infrastructure/clusters/<cluster-name>/.generated/`
+so Flux can reconcile the new desired state from Git.
+
 ## 🛠️ Requirements
 
 - A Talos raw image is already available in the configured Proxmox datastore.
@@ -285,6 +315,39 @@ The guest agent is required because the bootstrap stage discovers each VM's init
 - `talos_install_disk` defaults to `/dev/sda`. If your imported disk appears as a different device, update `cluster.tfvars` before running `just bootstrap-cluster`.
 - `worker_data_disk_size_gb` defaults to `100`. Worker nodes receive an additional `scsi1` disk of this size, and Talos provisions `/dev/sdb` as a `UserVolumeConfig` named `longhorn`.
 - `just bootstrap-cluster` relies on guest-agent-discovered IPv4 addresses from `01-provision`. If those are missing, the boot image likely does not start `qemu-guest-agent`.
+
+## 🧾 Generated Files
+
+This repository uses two different kinds of generated output, and they are intentionally treated differently.
+
+### Local Generated Artifacts
+
+`02-bootstrap/.generated/` contains local bootstrap artifacts such as:
+
+- `talosconfig`
+- `kubeconfig`
+- per-node machine configs
+
+These files are local operator artifacts and should not be committed.
+
+### Versioned GitOps Generated Artifacts
+
+`03-infrastructure/clusters/<cluster-name>/.generated/` contains cluster-specific manifests derived from the root config, for example:
+
+- MetalLB address-pool manifests
+- Prometheus ingress patches
+- Alloy configuration patches
+- app-specific generated overlays
+
+These files are generated, but they are also part of the GitOps input that Flux reconciles from Git.
+
+That means:
+
+- do not edit them by hand
+- regenerate them from the root config
+- commit them when they change
+
+In this repository, `.generated` under `03-infrastructure/clusters/` means "derived and not hand-maintained", not "gitignored".
 
 ## 🔄 Dependency Updates
 
