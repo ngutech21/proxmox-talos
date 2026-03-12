@@ -1,0 +1,36 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: appdb
+  namespace: postgres-smoke
+spec:
+  instances: 3
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.6
+  enableSuperuserAccess: true
+  superuserSecret:
+    name: appdb-superuser
+
+  bootstrap:
+    initdb:
+      database: appdb
+      owner: app
+      secret:
+        name: appdb-app-user
+
+  # In this cluster, control-plane nodes are tainted NoSchedule.
+  # Without matching tolerations, database pods will land on workers.
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+
+  storage:
+    size: 2Gi
+    storageClass: longhorn

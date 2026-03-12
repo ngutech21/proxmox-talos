@@ -2,7 +2,6 @@
 .DS_Store
 
 tmp
-cluster.yaml
 cluster.tfvars
 cluster.secrets.tfvars
 

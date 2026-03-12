@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
 - pgadmin-app.yaml
 - hello-nginx.yaml
+- postgres-smoke.yaml
