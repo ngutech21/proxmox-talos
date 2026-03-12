@@ -81,6 +81,27 @@ spec:
                   - conditions
                   - "[type=Ready]"
                   - status
+              - name: git_repository_info
+                help: The current state of a Flux GitRepository resource.
+                each:
+                  type: Info
+                  info:
+                    labelsFromPath:
+                      name:
+                      - metadata
+                      - name
+                labelsFromPath:
+                  exported_namespace:
+                  - metadata
+                  - namespace
+                  suspended:
+                  - spec
+                  - suspend
+                  ready:
+                  - status
+                  - conditions
+                  - "[type=Ready]"
+                  - status
             - groupVersionKind:
                 group: source.toolkit.fluxcd.io
                 version: v1
@@ -89,6 +110,27 @@ spec:
               metrics:
               - name: resource_info
                 help: The current state of a GitOps Toolkit resource.
+                each:
+                  type: Info
+                  info:
+                    labelsFromPath:
+                      name:
+                      - metadata
+                      - name
+                labelsFromPath:
+                  exported_namespace:
+                  - metadata
+                  - namespace
+                  suspended:
+                  - spec
+                  - suspend
+                  ready:
+                  - status
+                  - conditions
+                  - "[type=Ready]"
+                  - status
+              - name: helm_repository_info
+                help: The current state of a Flux HelmRepository resource.
                 each:
                   type: Info
                   info:
@@ -135,6 +177,27 @@ spec:
                   - conditions
                   - "[type=Ready]"
                   - status
+              - name: bucket_info
+                help: The current state of a Flux Bucket resource.
+                each:
+                  type: Info
+                  info:
+                    labelsFromPath:
+                      name:
+                      - metadata
+                      - name
+                labelsFromPath:
+                  exported_namespace:
+                  - metadata
+                  - namespace
+                  suspended:
+                  - spec
+                  - suspend
+                  ready:
+                  - status
+                  - conditions
+                  - "[type=Ready]"
+                  - status
             - groupVersionKind:
                 group: source.toolkit.fluxcd.io
                 version: v1
@@ -162,6 +225,27 @@ spec:
                   - conditions
                   - "[type=Ready]"
                   - status
+              - name: oci_repository_info
+                help: The current state of a Flux OCIRepository resource.
+                each:
+                  type: Info
+                  info:
+                    labelsFromPath:
+                      name:
+                      - metadata
+                      - name
+                labelsFromPath:
+                  exported_namespace:
+                  - metadata
+                  - namespace
+                  suspended:
+                  - spec
+                  - suspend
+                  ready:
+                  - status
+                  - conditions
+                  - "[type=Ready]"
+                  - status
             - groupVersionKind:
                 group: source.toolkit.fluxcd.io
                 version: v1
@@ -170,6 +254,24 @@ spec:
               metrics:
               - name: resource_info
                 help: The current state of a GitOps Toolkit resource.
+                each:
+                  type: Info
+                  info:
+                    labelsFromPath:
+                      name:
+                      - metadata
+                      - name
+                labelsFromPath:
+                  exported_namespace:
+                  - metadata
+                  - namespace
+                  ready:
+                  - status
+                  - conditions
+                  - "[type=Ready]"
+                  - status
+              - name: helm_chart_info
+                help: The current state of a Flux HelmChart resource.
                 each:
                   type: Info
                   info:
