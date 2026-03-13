@@ -21,6 +21,7 @@ spec:
     existingSecret: pgadmin-credentials
     strategy:
       type: Recreate
+      rollingUpdate: null
     service:
       type: ClusterIP
       port: 80
