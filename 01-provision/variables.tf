@@ -208,6 +208,17 @@ variable "vm_disk_size_gb" {
   }
 }
 
+variable "vm_scsi_hardware" {
+  description = "SCSI controller presented to the VM"
+  type        = string
+  default     = "virtio-scsi-single"
+
+  validation {
+    condition     = trimspace(var.vm_scsi_hardware) != ""
+    error_message = "vm_scsi_hardware must not be empty."
+  }
+}
+
 variable "worker_data_disk_size_gb" {
   description = "Optional additional data disk size in GB for worker nodes. Set to 0 to disable the extra Longhorn disk."
   type        = number
@@ -227,6 +238,17 @@ variable "vm_network_bridge" {
   validation {
     condition     = trimspace(var.vm_network_bridge) != ""
     error_message = "vm_network_bridge must not be empty."
+  }
+}
+
+variable "worker_vm_network_queues" {
+  description = "Number of VirtIO multiqueue NIC queues to expose on worker nodes. Set to 0 to disable multiqueue."
+  type        = number
+  default     = 4
+
+  validation {
+    condition     = var.worker_vm_network_queues >= 0
+    error_message = "worker_vm_network_queues must be greater than or equal to 0."
   }
 }
 

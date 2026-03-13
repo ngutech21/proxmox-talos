@@ -27,8 +27,10 @@ vm_cores          = 2
 vm_memory_mb      = 4096
 vm_disk_datastore = "local-zfs"
 vm_disk_size_gb   = 40
+vm_scsi_hardware  = "virtio-scsi-single"
 worker_data_disk_size_gb = 100
 vm_network_bridge = "vmbr0"
+worker_vm_network_queues = 4
 vm_ip_cidr        = 24
 vm_tags           = ["homelab"]
 

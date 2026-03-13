@@ -49,7 +49,7 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
   on_boot         = true
   stop_on_destroy = true
   machine         = "q35"
-  scsi_hardware   = "virtio-scsi-pci"
+  scsi_hardware   = var.vm_scsi_hardware
 
   tags = distinct(concat(["terraform", "talos"], each.value.tags))
 
@@ -103,6 +103,7 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
   network_device {
     bridge = var.vm_network_bridge
     model  = "virtio"
+    queues = each.value.role == "worker" ? var.worker_vm_network_queues : 0
   }
 
   serial_device {}
