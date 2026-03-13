@@ -22,3 +22,5 @@ cluster.secrets.tfvars
 # Generated artifacts
 02-bootstrap/.generated/*
 !**/.generated/.gitignore
+perf-baseline/
+perf-disk

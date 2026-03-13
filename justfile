@@ -307,4 +307,10 @@ reconcile-flux: require-kubeconfig
     flux --kubeconfig "{{generated_dir}}/kubeconfig" reconcile source git flux-system -n flux-system
     flux --kubeconfig "{{generated_dir}}/kubeconfig" reconcile kustomization flux-system -n flux-system --with-source
 
+baseline-performance out_root='perf-baseline': require-kubeconfig
+    /bin/zsh -lc 'set -euo pipefail; KUBECONFIG="$PWD/{{generated_dir}}/kubeconfig" zsh "$PWD/scripts/baseline-performance.sh" "{{out_root}}"'
+
+disk-speed-benchmark storageclass='longhorn' size='8Gi' runtime='30' node='' fio_image='docker.io/xridge/fio:latest' keep='false' out_root='perf-disk' replica_count='': require-kubeconfig
+    /bin/zsh -lc 'set -euo pipefail; KUBECONFIG="$PWD/{{generated_dir}}/kubeconfig" zsh "$PWD/scripts/disk-speed-benchmark.sh" "{{out_root}}" "{{storageclass}}" "{{size}}" "{{runtime}}" "{{node}}" "{{fio_image}}" "{{keep}}" "1G" "{{replica_count}}"'
+
 destroy-cluster: require-config talos-init talos-destroy provision-init provision-destroy
