@@ -141,6 +141,7 @@ locals {
           diskSelector = {
             match = "disk.dev_path == '/dev/sdb'"
           }
+          grow = true
         }
       }) : null
     )
