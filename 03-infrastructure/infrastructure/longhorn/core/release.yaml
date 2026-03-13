@@ -18,6 +18,10 @@ spec:
   install:
     createNamespace: false
   values:
+    persistence:
+      defaultClass: true
+      defaultClassReplicaCount: "2"
+      defaultDataLocality: best-effort
     longhornUI:
       replicas: 1
     defaultSettings:

@@ -33,7 +33,9 @@ Current structure:
 - `infrastructure/longhorn/`
   Longhorn split into `core/` (namespace, repository, Helm release), `ingress/` (UI ingress), and
   `monitoring/` (ServiceMonitor); `core/` uses `/var/mnt/longhorn` as `defaultDataPath` with
-  homelab-tuned defaults (`defaultReplicaCount=2`, `defaultDataLocality=best-effort`, single-replica UI)
+  homelab-tuned defaults (`defaultReplicaCount=2`, `defaultDataLocality=best-effort`, single-replica UI);
+  the chart-managed default `longhorn` StorageClass is also configured to provision with two replicas
+  and `best-effort` data locality
 - `infrastructure/observability/`
   minimal `kube-prometheus-stack` install with Prometheus and Alertmanager enabled, but Grafana disabled so an external Grafana can be used;
   retention and PVC sizing are trimmed for homelab use to reduce steady Longhorn write load
