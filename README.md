@@ -46,7 +46,7 @@ Today, this repository builds the foundation of a Talos-based Kubernetes platfor
 | Infrastructure | `Terraform` | Talos virtual machines on Proxmox with declared CPU, memory, disks, placement, VM IDs, and networking metadata |
 | Cluster bootstrap | `Talos` | Machine configs, static node networking, control-plane VIP config, cluster bootstrap, `talosconfig`, and `kubeconfig` |
 | GitOps entrypoint | `Flux` | GitOps bootstrap into the cluster and repo structure under `03-infrastructure/` |
-| Platform layer | `Flux` manifests | Shared infrastructure components for MetalLB, Traefik, cert-manager, Longhorn, CloudNativePG, Prometheus, Alertmanager, and Alloy |
+| Platform layer | `Flux` manifests | Shared infrastructure components for MetalLB, Traefik, cert-manager, Longhorn, CloudNativePG, Metrics Server, Prometheus, Alertmanager, and Alloy |
 
 Current repository stages:
 
@@ -70,6 +70,7 @@ After the main bootstrap flow, you have:
 - cert-manager for certificate management
 - CloudNativePG as the PostgreSQL operator
 - Prometheus and Alertmanager for metrics and alerting
+- Metrics Server for the Kubernetes resource metrics API and `kubectl top`
 - Alloy for shipping cluster logs to an external Loki instance
 
 If worker data disks are configured, worker nodes also get a Talos `UserVolumeConfig` named `longhorn`, mounted at `/var/mnt/longhorn`.
@@ -250,6 +251,7 @@ Right now the repository contains:
 - cert-manager for certificate management
 - CloudNativePG as the PostgreSQL operator
 - Prometheus and Alertmanager via `kube-prometheus-stack`
+- Metrics Server for `kubectl top` and HPA/VPA-style resource metrics
 - Alloy for forwarding cluster logs to an external Loki instance
 
 ### `04-apps`

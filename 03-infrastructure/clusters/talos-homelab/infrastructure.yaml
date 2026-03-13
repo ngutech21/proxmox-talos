@@ -82,6 +82,21 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
+  name: infrastructure-metrics-server
+  namespace: flux-system
+spec:
+  interval: 10m0s
+  path: ./03-infrastructure/infrastructure/metrics-server/core
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  timeout: 5m0s
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
   name: infrastructure-longhorn
   namespace: flux-system
 spec:

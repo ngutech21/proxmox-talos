@@ -30,6 +30,9 @@ Current structure:
   minimal cert-manager install via the official Jetstack OCI Helm chart, with CRDs enabled in the Helm release
 - `infrastructure/cloudnative-pg/`
   minimal CloudNativePG operator install via the official `cnpg/cloudnative-pg` Helm chart in `cnpg-system`
+- `infrastructure/metrics-server/`
+  minimal Metrics Server install in `kube-system` so `kubectl top` and the Kubernetes resource metrics API work;
+  the current Talos setup uses `--kubelet-insecure-tls` until kubelet serving cert rotation is enabled
 - `infrastructure/longhorn/`
   Longhorn split into `core/` (namespace, repository, Helm release), `ingress/` (UI ingress), and
   `monitoring/` (ServiceMonitor); `core/` uses `/var/mnt/longhorn` as `defaultDataPath` with
