@@ -217,7 +217,7 @@ just print-cluster-info
 
 - Talos secrets generation inside Terraform state
 - one machine config per node
-- config apply to the currently reachable VM addresses reported by the Proxmox guest agent
+- config apply to the currently reachable VM addresses, preferring the declared node IP once it is active and otherwise falling back to the Proxmox guest agent
 - `talosctl bootstrap` on the first control-plane node
 - `talosctl kubeconfig` into `02-bootstrap/.generated/kubeconfig`
 - Talos and Kubernetes readiness checks
@@ -308,7 +308,7 @@ so Flux can reconcile the new desired state from Git.
 - The installer image matches the raw image build and Talos version.
 - Your IP plan and `api_vip` fit your network.
 
-The guest agent is required because the bootstrap stage discovers each VM's initial DHCP address before Talos switches the node to its final static IP.
+The guest agent is required because the bootstrap stage may need each VM's initial DHCP address before Talos switches the node to its final static IP. Once the declared static IP is active, the Terraform outputs prefer that address.
 
 ## 📝 Operational Notes
 
@@ -316,7 +316,7 @@ The guest agent is required because the bootstrap stage discovers each VM's init
 - `talos_version` should match the Talos version of the raw and installer images.
 - `talos_install_disk` defaults to `/dev/sda`. If your imported disk appears as a different device, update `cluster.tfvars` before running `just bootstrap-cluster`.
 - `worker_data_disk_size_gb` defaults to `100`. Worker nodes receive an additional `scsi1` disk of this size, and Talos provisions `/dev/sdb` as a `UserVolumeConfig` named `longhorn`.
-- `just bootstrap-cluster` relies on guest-agent-discovered IPv4 addresses from `01-provision`. If those are missing, the boot image likely does not start `qemu-guest-agent`.
+- `just bootstrap-cluster` prefers each node's declared static IP from `01-provision` once it is active, and otherwise falls back to guest-agent-discovered IPv4 addresses. If the fallback addresses are missing during initial bootstrap, the boot image likely does not start `qemu-guest-agent`.
 
 ## 🧾 Generated Files
 

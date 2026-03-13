@@ -136,21 +136,22 @@ resource "proxmox_virtual_environment_vm" "talos_node" {
 }
 
 locals {
+  observed_node_ipv4_addresses = {
+    for node in local.enabled_nodes : node.name => try([
+      for address in flatten(proxmox_virtual_environment_vm.talos_node[node.name].ipv4_addresses) : address
+      if address != "" && !startswith(address, "127.") && !startswith(address, "169.254.")
+    ], [])
+  }
+
   node_runtime_details = [
     for node in local.enabled_nodes : {
-      name         = node.name
-      role         = node.role
-      proxmox_node = node.proxmox_node
-      vm_id        = node.vm_id
-      ip           = node.ip
-      current_ip = try([
-        for address in flatten(proxmox_virtual_environment_vm.talos_node[node.name].ipv4_addresses) : address
-        if address != "" && !startswith(address, "127.") && !startswith(address, "169.254.")
-      ][0], null)
-      current_ips = try([
-        for address in flatten(proxmox_virtual_environment_vm.talos_node[node.name].ipv4_addresses) : address
-        if address != "" && !startswith(address, "127.") && !startswith(address, "169.254.")
-      ], [])
+      name                    = node.name
+      role                    = node.role
+      proxmox_node            = node.proxmox_node
+      vm_id                   = node.vm_id
+      ip                      = node.ip
+      current_ip              = contains(local.observed_node_ipv4_addresses[node.name], node.ip) ? node.ip : try(local.observed_node_ipv4_addresses[node.name][0], null)
+      current_ips             = local.observed_node_ipv4_addresses[node.name]
       network_interface_names = try(flatten(proxmox_virtual_environment_vm.talos_node[node.name].network_interface_names), [])
       mac_addresses           = try(flatten(proxmox_virtual_environment_vm.talos_node[node.name].mac_addresses), [])
     }
@@ -188,7 +189,7 @@ output "worker_ips" {
 }
 
 output "bootstrap_endpoints" {
-  description = "Current IPv4 addresses discovered via the QEMU guest agent for each enabled node"
+  description = "Reachable IPv4 bootstrap endpoints for each enabled node, preferring the declared node IP once it appears and otherwise falling back to QEMU guest-agent discovery"
   value = {
     for node in local.node_runtime_details : node.name => node.current_ip
   }
