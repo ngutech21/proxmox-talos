@@ -77,7 +77,6 @@ locals {
           )
 
           network = {
-            hostname    = node.name
             nameservers = var.vm_dns_servers
             interfaces = [
               merge(
