@@ -42,7 +42,7 @@ Current structure:
 - `apps/pgadmin/`
   pgAdmin 4 as a concrete app workload, using Longhorn for persistence and Traefik ingress at `pgadmin.home.arpa`
 - `clusters/<cluster-name>/.generated/pgadmin/`
-  cluster-specific generated overlay for pgAdmin values such as ingress host and PVC size
+  cluster-specific generated overlay for pgAdmin values such as ingress host and PVC size; the encrypted credentials secret can be created with `just pgadmin-secret`
 - `clusters/<cluster-name>/.generated/alloy/`
   cluster-specific generated overlay for the Alloy config, especially the external Loki push URL and cluster label
 - `smoke-tests/longhorn/`

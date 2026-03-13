@@ -2,3 +2,6 @@ creation_rules:
 - path_regex: ^03-infrastructure/smoke-tests/postgres/secrets\.sops\.yaml$
   encrypted_regex: ^(data|stringData)$
   age: age1qx9cx5rthaaqt3a5cz39yn5rtc0fx9e2drxvr77cpkl04emnz4assc9y0m
+- path_regex: (^|.*/)03-infrastructure/clusters/[^/]+/\.generated/pgadmin/credentials-secret\.sops\.yaml$
+  encrypted_regex: ^(data|stringData)$
+  age: age1qx9cx5rthaaqt3a5cz39yn5rtc0fx9e2drxvr77cpkl04emnz4assc9y0m

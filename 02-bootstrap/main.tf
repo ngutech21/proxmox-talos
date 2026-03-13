@@ -245,9 +245,14 @@ locals {
   pgadmin_generated_kustomization = yamlencode({
     apiVersion = "kustomize.config.k8s.io/v1beta1"
     kind       = "Kustomization"
-    resources = [
-      "../../../../apps/pgadmin",
-    ]
+    resources = concat(
+      [
+        "../../../../apps/pgadmin",
+      ],
+      fileexists("${local.pgadmin_generated_dir}/credentials-secret.sops.yaml") ? [
+        "credentials-secret.sops.yaml",
+      ] : []
+    )
     patches = [
       {
         path = "values-patch.yaml"

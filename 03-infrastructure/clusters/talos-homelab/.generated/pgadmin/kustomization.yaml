@@ -10,3 +10,4 @@
     "version": "v2"
 "resources":
 - "../../../../apps/pgadmin"
+- "credentials-secret.sops.yaml"

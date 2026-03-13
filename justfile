@@ -126,6 +126,18 @@ bootstrap-apply: require-config ensure-generated-dir ensure-cluster-generated-di
 
 generate-artifacts: require-config ensure-generated-dir ensure-cluster-generated-dirs talos-init talos-generate
 
+pgadmin-secret password='': require-config ensure-cluster-generated-dirs
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cluster_name="$(sed -nE 's/^cluster_name[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' "{{cluster_config}}" | head -n1)"
+    if [ -z "$cluster_name" ]; then
+      echo "Could not determine cluster_name from {{cluster_config}}." >&2
+      exit 1
+    fi
+    output_path="$PWD/03-infrastructure/clusters/$cluster_name/.generated/pgadmin/credentials-secret.sops.yaml"
+    zsh "$PWD/scripts/create-pgadmin-secret.sh" "$output_path" "{{password}}"
+    just generate-artifacts
+
 [private]
 bootstrap-etcd: require-talosconfig
     #!/usr/bin/env bash
