@@ -229,7 +229,7 @@ locals {
     - op: add
       path: /spec/values/env
       value:
-        email: pgadmin.${var.base_domain}
+        email: pgadmin@home.de
     - op: replace
       path: /spec/values/persistentVolume/size
       value: ${var.pgadmin_storage_size}
