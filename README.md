@@ -121,6 +121,12 @@ If worker data disks are configured, worker nodes also get a Talos `UserVolumeCo
    which reconciles shared platform components such as MetalLB, Traefik, cert-manager,
    Longhorn, CloudNativePG, Prometheus, Alertmanager, and Alloy.
 
+8. If you use SOPS-encrypted app secrets such as pgAdmin credentials, import your Age private key into Flux:
+
+   ```bash
+   just install-sops-age age_key_file=/path/to/age-key.txt
+   ```
+
 ## 🧱 Declarative Cluster Config
 
 The main user-edited file is `cluster.tfvars`.

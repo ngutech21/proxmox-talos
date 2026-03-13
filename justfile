@@ -315,6 +315,31 @@ install-flux owner='' repo='' branch='master' cluster='': require-config require
       --personal \
       --token-auth
 
+install-sops-age age_key_file='': require-kubeconfig
+    #!/usr/bin/env bash
+    set -euo pipefail
+    resolved="{{age_key_file}}"
+    case "$resolved" in
+      age_key_file=*)
+        resolved="${resolved#age_key_file=}"
+        ;;
+    esac
+    if [ -z "$resolved" ]; then
+      echo "Missing age key file. Pass age_key_file=/path/to/key.txt." >&2
+      exit 1
+    fi
+    if [ ! -f "$resolved" ]; then
+      echo "Age key file '$resolved' does not exist." >&2
+      exit 1
+    fi
+    tmp_manifest="$(mktemp)"
+    trap 'rm -f "$tmp_manifest"' EXIT
+    kubectl --kubeconfig "{{generated_dir}}/kubeconfig" -n flux-system create secret generic sops-age \
+      --from-file=age.agekey="$resolved" \
+      --dry-run=client \
+      -o yaml > "$tmp_manifest"
+    kubectl --kubeconfig "{{generated_dir}}/kubeconfig" apply -f "$tmp_manifest"
+
 reconcile-flux: require-kubeconfig
     flux --kubeconfig "{{generated_dir}}/kubeconfig" reconcile source git flux-system -n flux-system
     flux --kubeconfig "{{generated_dir}}/kubeconfig" reconcile kustomization flux-system -n flux-system --with-source
