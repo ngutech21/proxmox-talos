@@ -19,7 +19,8 @@ spec:
     createNamespace: false
   values:
     longhornUI:
-      replicas: 3
+      replicas: 1
     defaultSettings:
       defaultDataPath: /var/mnt/longhorn
-      defaultReplicaCount: 3
+      defaultDataLocality: best-effort
+      defaultReplicaCount: 2

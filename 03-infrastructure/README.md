@@ -31,7 +31,8 @@ Current structure:
   minimal CloudNativePG operator install via the official `cnpg/cloudnative-pg` Helm chart in `cnpg-system`
 - `infrastructure/longhorn/`
   minimal Longhorn install via `HelmRepository` and `HelmRelease`, using `/var/mnt/longhorn` as `defaultDataPath`
-  and exposing the UI through Traefik at `longhorn.home.arpa`
+  with global defaults tuned for this homelab (`defaultReplicaCount=2`, `defaultDataLocality=best-effort`,
+  single-replica UI) and exposing the UI through Traefik at `longhorn.home.arpa`
 - `infrastructure/observability/`
   minimal `kube-prometheus-stack` install with Prometheus and Alertmanager enabled, but Grafana disabled so an external Grafana can be used
 - `infrastructure/alloy/`
