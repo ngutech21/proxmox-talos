@@ -139,7 +139,7 @@ locals {
         volumeType = "disk"
         provisioning = {
           diskSelector = {
-            match = "disk.dev_path == '/dev/sdb'"
+            match = "'/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1' in disk.symlinks"
           }
           grow = true
         }
