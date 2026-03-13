@@ -1,14 +1,14 @@
 - op: add
   path: /spec/values/env
   value:
-    email: pgadmin@pgadmin.com
+    email: pgadmin.home.arpa
 - op: replace
   path: /spec/values/persistentVolume/size
   value: 5Gi
 - op: replace
   path: /spec/values/ingress/hosts
   value:
-  - host: pgadmin.home.arpa
-    paths:
-    - path: /
-      pathType: Prefix
+    - host: pgadmin.home.arpa
+      paths:
+        - path: /
+          pathType: Prefix
