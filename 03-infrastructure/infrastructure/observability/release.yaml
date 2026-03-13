@@ -346,7 +346,7 @@ spec:
       enabled: true
       alertmanagerSpec:
         replicas: 1
-        retention: 120h
+        retention: 48h
         storage:
           volumeClaimTemplate:
             spec:
@@ -354,11 +354,12 @@ spec:
               - ReadWriteOnce
               resources:
                 requests:
-                  storage: 5Gi
+                  storage: 2Gi
     prometheus:
       prometheusSpec:
         replicas: 1
-        retention: 15d
+        retention: 7d
+        retentionSize: 8GiB
         storageSpec:
           volumeClaimTemplate:
             spec:
@@ -366,4 +367,4 @@ spec:
               - ReadWriteOnce
               resources:
                 requests:
-                  storage: 20Gi
+                  storage: 10Gi

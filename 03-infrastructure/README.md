@@ -34,7 +34,8 @@ Current structure:
   with global defaults tuned for this homelab (`defaultReplicaCount=2`, `defaultDataLocality=best-effort`,
   single-replica UI) and exposing the UI through Traefik at `longhorn.home.arpa`
 - `infrastructure/observability/`
-  minimal `kube-prometheus-stack` install with Prometheus and Alertmanager enabled, but Grafana disabled so an external Grafana can be used
+  minimal `kube-prometheus-stack` install with Prometheus and Alertmanager enabled, but Grafana disabled so an external Grafana can be used;
+  retention and PVC sizing are trimmed for homelab use to reduce steady Longhorn write load
 - `infrastructure/alloy/`
   minimal Grafana Alloy install that collects pod logs and forwards them to an external Loki endpoint
 - `apps/pgadmin/`
