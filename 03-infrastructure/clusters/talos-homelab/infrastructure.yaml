@@ -56,7 +56,7 @@ spec:
   dependsOn:
   - name: infrastructure-longhorn
   interval: 10m0s
-  path: ./03-infrastructure/infrastructure/cloudnative-pg
+  path: ./03-infrastructure/infrastructure/cloudnative-pg/core
   prune: true
   sourceRef:
     kind: GitRepository
@@ -71,7 +71,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m0s
-  path: ./03-infrastructure/infrastructure/cert-manager
+  path: ./03-infrastructure/infrastructure/cert-manager/core
   prune: true
   sourceRef:
     kind: GitRepository
@@ -174,7 +174,7 @@ spec:
   dependsOn:
   - name: infrastructure-observability
   interval: 10m0s
-  path: ./03-infrastructure/clusters/talos-homelab/.generated/alloy
+  path: ./03-infrastructure/infrastructure/alloy/core
   prune: true
   sourceRef:
     kind: GitRepository
@@ -192,6 +192,60 @@ spec:
   - name: infrastructure-observability
   interval: 10m0s
   path: ./03-infrastructure/clusters/talos-homelab/flux-monitoring
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  timeout: 5m0s
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infrastructure-cert-manager-monitoring
+  namespace: flux-system
+spec:
+  dependsOn:
+  - name: infrastructure-cert-manager
+  - name: infrastructure-observability
+  interval: 10m0s
+  path: ./03-infrastructure/infrastructure/cert-manager/monitoring
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  timeout: 5m0s
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infrastructure-cloudnative-pg-monitoring
+  namespace: flux-system
+spec:
+  dependsOn:
+  - name: infrastructure-cloudnative-pg
+  - name: infrastructure-observability
+  interval: 10m0s
+  path: ./03-infrastructure/infrastructure/cloudnative-pg/monitoring
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  timeout: 5m0s
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infrastructure-alloy-monitoring
+  namespace: flux-system
+spec:
+  dependsOn:
+  - name: infrastructure-alloy
+  - name: infrastructure-observability
+  interval: 10m0s
+  path: ./03-infrastructure/infrastructure/alloy/monitoring
   prune: true
   sourceRef:
     kind: GitRepository
