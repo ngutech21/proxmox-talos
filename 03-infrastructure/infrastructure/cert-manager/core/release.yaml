@@ -5,10 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 30m0s
-  releaseName: cert-manager
   targetNamespace: cert-manager
-  install:
-    createNamespace: false
   chart:
     spec:
       chart: cert-manager
@@ -18,9 +15,4 @@ spec:
         name: cert-manager
         namespace: flux-system
   values:
-    crds:
-      enabled: true
-    prometheus:
-      enabled: true
-      podmonitor:
-        enabled: false
+    installCRDs: true

@@ -1,19 +1,17 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: cnpg-cloudnative-pg
-  namespace: cnpg-system
+  name: cert-manager
+  namespace: cert-manager
   labels:
     release: kube-prometheus-stack
 spec:
   namespaceSelector:
     matchNames:
-    - cnpg-system
+    - cert-manager
   selector:
     matchLabels:
-      app.kubernetes.io/instance: cnpg
-      app.kubernetes.io/name: cloudnative-pg
+      app.kubernetes.io/name: cert-manager
   podMetricsEndpoints:
-  - port: metrics
-    interval: 30s
+  - port: http-metrics
     path: /metrics
