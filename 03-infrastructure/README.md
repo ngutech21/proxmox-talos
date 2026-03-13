@@ -18,21 +18,22 @@ The first planned platform component is Traefik.
 Current structure:
 
 - `clusters/talos-homelab/infrastructure.yaml`
-  cluster-specific Flux `Kustomization` objects that point at the shared MetalLB, Traefik, cert-manager, and Longhorn bases
+  cluster-specific Flux `Kustomization` objects that point at the shared MetalLB, Traefik, cert-manager, Longhorn,
+  and their integration overlays
 - `clusters/talos-homelab/metallb/`
   cluster-specific MetalLB address-pool configuration for the homelab LAN
 - `infrastructure/metallb/`
   minimal MetalLB install via `HelmRepository` and `HelmRelease`
 - `infrastructure/traefik/`
-  minimal Traefik install via `HelmRepository` and `HelmRelease`
+  Traefik split into `core/` (namespace, repository, Helm release) and `monitoring/` (ServiceMonitor)
 - `infrastructure/cert-manager/`
   minimal cert-manager install via the official Jetstack OCI Helm chart, with CRDs enabled in the Helm release
 - `infrastructure/cloudnative-pg/`
   minimal CloudNativePG operator install via the official `cnpg/cloudnative-pg` Helm chart in `cnpg-system`
 - `infrastructure/longhorn/`
-  minimal Longhorn install via `HelmRepository` and `HelmRelease`, using `/var/mnt/longhorn` as `defaultDataPath`
-  with global defaults tuned for this homelab (`defaultReplicaCount=2`, `defaultDataLocality=best-effort`,
-  single-replica UI) and exposing the UI through Traefik at `longhorn.home.arpa`
+  Longhorn split into `core/` (namespace, repository, Helm release), `ingress/` (UI ingress), and
+  `monitoring/` (ServiceMonitor); `core/` uses `/var/mnt/longhorn` as `defaultDataPath` with
+  homelab-tuned defaults (`defaultReplicaCount=2`, `defaultDataLocality=best-effort`, single-replica UI)
 - `infrastructure/observability/`
   minimal `kube-prometheus-stack` install with Prometheus and Alertmanager enabled, but Grafana disabled so an external Grafana can be used;
   retention and PVC sizing are trimmed for homelab use to reduce steady Longhorn write load

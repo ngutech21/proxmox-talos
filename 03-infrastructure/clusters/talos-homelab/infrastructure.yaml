@@ -39,7 +39,7 @@ spec:
   dependsOn:
   - name: infrastructure-metallb-config
   interval: 10m0s
-  path: ./03-infrastructure/infrastructure/traefik
+  path: ./03-infrastructure/infrastructure/traefik/core
   prune: true
   sourceRef:
     kind: GitRepository
@@ -86,12 +86,30 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m0s
-  path: ./03-infrastructure/infrastructure/longhorn
+  path: ./03-infrastructure/infrastructure/longhorn/core
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
   timeout: 10m0s
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infrastructure-longhorn-ingress
+  namespace: flux-system
+spec:
+  dependsOn:
+  - name: infrastructure-longhorn
+  - name: infrastructure-traefik
+  interval: 10m0s
+  path: ./03-infrastructure/infrastructure/longhorn/ingress
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  timeout: 5m0s
   wait: true
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -109,6 +127,42 @@ spec:
     kind: GitRepository
     name: flux-system
   timeout: 10m0s
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infrastructure-traefik-monitoring
+  namespace: flux-system
+spec:
+  dependsOn:
+  - name: infrastructure-traefik
+  - name: infrastructure-observability
+  interval: 10m0s
+  path: ./03-infrastructure/infrastructure/traefik/monitoring
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  timeout: 5m0s
+  wait: true
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infrastructure-longhorn-monitoring
+  namespace: flux-system
+spec:
+  dependsOn:
+  - name: infrastructure-longhorn
+  - name: infrastructure-observability
+  interval: 10m0s
+  path: ./03-infrastructure/infrastructure/longhorn/monitoring
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  timeout: 5m0s
   wait: true
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
