@@ -24,7 +24,7 @@ spec:
         memoryRequestsMissing: warning
         cpuLimitsMissing: warning
         memoryLimitsMissing: warning
-        readOnlyRootFilesystem: warning
+        notReadOnlyRootFilesystem: warning
         privilegeEscalationAllowed: danger
         runAsRootAllowed: warning
         insecureCapabilities: danger
@@ -34,14 +34,13 @@ spec:
         pullPolicyNotAlways: ignore
         tagNotSpecified: warning
         priorityClassNotSet: warning
-        pdbDisruptionsIsZero: warning
+        missingPodDisruptionBudget: warning
       exemptions:
         - namespace: kube-system
           controllerNames:
             - kube-flannel
           rules:
             - hostNetworkSet
-            - hostPathMount
             - runAsRootAllowed
             - privilegeEscalationAllowed
             - insecureCapabilities
@@ -56,7 +55,6 @@ spec:
             - longhorn-csi-plugin
           rules:
             - hostNetworkSet
-            - hostPathMount
             - runAsRootAllowed
             - privilegeEscalationAllowed
             - insecureCapabilities
