@@ -25,6 +25,43 @@ if [ ! -f "$polaris_config" ]; then
   exit 1
 fi
 
+strip_sops_metadata() {
+  local input="$1"
+  local output="$2"
+
+  # SOPS-encrypted manifests carry a top-level `sops` block that Kubernetes does
+  # not accept. Remove only that metadata block so schema validation still checks
+  # the underlying resource shape.
+  awk '
+    BEGIN {
+      skip = 0
+    }
+
+    /^---[[:space:]]*$/ {
+      skip = 0
+      print
+      next
+    }
+
+    skip && /^[^[:space:]]/ {
+      skip = 0
+    }
+
+    !skip && /^sops:[[:space:]]*$/ {
+      skip = 1
+      next
+    }
+
+    skip {
+      next
+    }
+
+    {
+      print
+    }
+  ' "$input" >"$output"
+}
+
 collect_dirs() {
   local input="$1"
 
@@ -78,19 +115,21 @@ for dir in "${dirs[@]}"; do
   rendered="$(mktemp "${temp_root}/validate-manifests.XXXXXX")"
   mv "$rendered" "${rendered}.yaml"
   rendered="${rendered}.yaml"
+  sanitized="${rendered%.yaml}.sanitized.yaml"
   kubectl kustomize "$dir" >"$rendered"
+  strip_sops_metadata "$rendered" "$sanitized"
 
   echo "Validating $dir"
   kubeconform \
     -strict \
     -summary \
     -ignore-missing-schemas \
-    "$rendered"
+    "$sanitized"
 
   echo "Auditing $dir"
   polaris_output="$(polaris audit \
     --config "$polaris_config" \
-    --audit-path "$rendered" \
+    --audit-path "$sanitized" \
     --format pretty \
     --only-show-failed-tests)"
   printf '%s\n' "$polaris_output"
@@ -99,5 +138,5 @@ for dir in "${dirs[@]}"; do
     echo "Note: Polaris found no native controllers in $dir; the score is not meaningful for Flux/HelmRelease-only manifests." >&2
   fi
 
-  rm -f "$rendered"
+  rm -f "$rendered" "$sanitized"
 done
