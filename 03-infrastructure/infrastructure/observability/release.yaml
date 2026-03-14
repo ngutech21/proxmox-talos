@@ -21,6 +21,7 @@ spec:
     grafana:
       enabled: false
     kube-state-metrics:
+      replicas: 2
       rbac:
         extraRules:
         - apiGroups:
@@ -344,8 +345,16 @@ spec:
                   - status
     alertmanager:
       enabled: true
+      podDisruptionBudget:
+        enabled: true
+        minAvailable: 1
       alertmanagerSpec:
-        replicas: 1
+        replicas: 2
+        podAntiAffinity: hard
+        topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
         retention: 48h
         storage:
           volumeClaimTemplate:
