@@ -1,0 +1,44 @@
+checks:
+  cpuRequestsMissing: warning
+  memoryRequestsMissing: warning
+  cpuLimitsMissing: warning
+  memoryLimitsMissing: warning
+  readOnlyRootFilesystem: warning
+  privilegeEscalationAllowed: danger
+  runAsRootAllowed: warning
+  insecureCapabilities: danger
+  hostNetworkSet: warning
+  hostPIDSet: danger
+  hostIPCSet: danger
+  pullPolicyNotAlways: ignore
+  tagNotSpecified: warning
+  priorityClassNotSet: warning
+  pdbDisruptionsIsZero: warning
+
+exemptions:
+  - namespace: kube-system
+    controllerNames:
+      - kube-flannel
+    rules:
+      - hostNetworkSet
+      - hostPathMount
+      - runAsRootAllowed
+      - privilegeEscalationAllowed
+      - insecureCapabilities
+
+  - namespace: kube-system
+    controllerNames:
+      - coredns
+    rules:
+      - priorityClassNotSet
+
+  - namespace: longhorn-system
+    controllerNames:
+      - longhorn-manager
+      - longhorn-csi-plugin
+    rules:
+      - hostNetworkSet
+      - hostPathMount
+      - runAsRootAllowed
+      - privilegeEscalationAllowed
+      - insecureCapabilities
