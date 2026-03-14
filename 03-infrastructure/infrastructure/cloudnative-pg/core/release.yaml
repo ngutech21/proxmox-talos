@@ -14,3 +14,12 @@ spec:
         kind: HelmRepository
         name: cnpg
         namespace: flux-system
+  values:
+    priorityClassName: system-cluster-critical
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
