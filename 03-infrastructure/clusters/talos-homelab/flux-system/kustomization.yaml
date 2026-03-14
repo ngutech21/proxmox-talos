@@ -3,3 +3,6 @@ kind: Kustomization
 resources:
 - gotk-components.yaml
 - gotk-sync.yaml
+- pdbs.yaml
+patches:
+- path: controllers-ha.yaml
