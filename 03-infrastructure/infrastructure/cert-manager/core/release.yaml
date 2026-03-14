@@ -16,6 +16,8 @@ spec:
         namespace: flux-system
   values:
     installCRDs: true
+    strategy:
+      type: Recreate
     affinity:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
@@ -37,6 +39,8 @@ spec:
               - cert-manager-cert-manager
           topologyKey: kubernetes.io/hostname
     cainjector:
+      strategy:
+        type: Recreate
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -58,6 +62,8 @@ spec:
                 - cert-manager-cert-manager
             topologyKey: kubernetes.io/hostname
     webhook:
+      strategy:
+        type: Recreate
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
