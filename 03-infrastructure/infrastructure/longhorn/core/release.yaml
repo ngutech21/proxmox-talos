@@ -23,7 +23,7 @@ spec:
       defaultClassReplicaCount: "2"
       defaultDataLocality: best-effort
     longhornUI:
-      replicas: 1
+      replicas: 2
     defaultSettings:
       defaultDataPath: /var/mnt/longhorn
       defaultDataLocality: best-effort
