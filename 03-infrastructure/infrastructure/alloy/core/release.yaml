@@ -15,5 +15,22 @@ spec:
         name: grafana
         namespace: flux-system
   values:
+    alloy:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    configReloader:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 50Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
     controller:
       type: daemonset
+      priorityClassName: system-cluster-critical
