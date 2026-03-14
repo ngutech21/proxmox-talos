@@ -1,0 +1,16 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: apps-polaris
+  namespace: flux-system
+spec:
+  dependsOn:
+  - name: infrastructure-traefik
+  interval: 10m0s
+  path: ./03-infrastructure/clusters/talos-homelab/.generated/polaris
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  timeout: 10m0s
+  wait: true

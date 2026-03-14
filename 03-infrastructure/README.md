@@ -46,8 +46,12 @@ Current structure:
   minimal Grafana Alloy install that collects pod logs and forwards them to an external Loki endpoint
 - `apps/pgadmin/`
   pgAdmin 4 as a concrete app workload, using Longhorn for persistence and Traefik ingress at `pgadmin.home.arpa`
+- `apps/polaris/`
+  Fairwinds Polaris dashboard as a Flux-managed Helm workload, exposed through Traefik at the configured `polars_host`
 - `clusters/<cluster-name>/.generated/pgadmin/`
   cluster-specific generated overlay for pgAdmin values such as ingress host and PVC size; the encrypted credentials secret can be created with `just pgadmin-secret`
+- `clusters/<cluster-name>/.generated/polaris/`
+  cluster-specific generated overlay for the Polaris ingress host, derived from the root `polars_host`
 - `clusters/<cluster-name>/.generated/alloy/`
   cluster-specific generated overlay for the Alloy config, especially the external Loki push URL and cluster label
 - `smoke-tests/longhorn/`

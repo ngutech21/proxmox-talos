@@ -243,6 +243,16 @@ variable "pgadmin_storage_size" {
   }
 }
 
+variable "polars_host" {
+  description = "Ingress host for the Polaris dashboard"
+  type        = string
+
+  validation {
+    condition     = trimspace(var.polars_host) != ""
+    error_message = "polars_host must not be empty."
+  }
+}
+
 variable "prometheus_host" {
   description = "Optional ingress host for Prometheus. Leave empty to derive prometheus.<base_domain>."
   type        = string

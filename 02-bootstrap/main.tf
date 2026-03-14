@@ -19,6 +19,7 @@ locals {
   cluster_generated_dir       = "${path.module}/../03-infrastructure/clusters/${var.cluster_name}/.generated"
   metallb_generated_dir       = "${local.cluster_generated_dir}/metallb"
   pgadmin_generated_dir       = "${local.cluster_generated_dir}/pgadmin"
+  polaris_generated_dir       = "${local.cluster_generated_dir}/polaris"
   observability_generated_dir = "${local.cluster_generated_dir}/observability"
   alloy_generated_dir         = "${local.cluster_generated_dir}/alloy"
 
@@ -267,6 +268,33 @@ locals {
     ]
   })
 
+  polaris_values_patch = <<-EOT
+    - op: replace
+      path: /spec/values/dashboard/ingress/hosts
+      value:
+        - ${var.polars_host}
+  EOT
+
+  polaris_generated_kustomization = yamlencode({
+    apiVersion = "kustomize.config.k8s.io/v1beta1"
+    kind       = "Kustomization"
+    resources = [
+      "../../../../apps/polaris",
+    ]
+    patches = [
+      {
+        path = "values-patch.yaml"
+        target = {
+          group     = "helm.toolkit.fluxcd.io"
+          version   = "v2"
+          kind      = "HelmRelease"
+          name      = "polaris"
+          namespace = "flux-system"
+        }
+      },
+    ]
+  })
+
   observability_values_patch = <<-EOT
     - op: add
       path: /spec/values/prometheus/ingress
@@ -450,6 +478,16 @@ resource "local_file" "pgadmin_values_patch" {
 resource "local_file" "pgadmin_generated_kustomization" {
   content  = local.pgadmin_generated_kustomization
   filename = "${local.pgadmin_generated_dir}/kustomization.yaml"
+}
+
+resource "local_file" "polaris_values_patch" {
+  content  = local.polaris_values_patch
+  filename = "${local.polaris_generated_dir}/values-patch.yaml"
+}
+
+resource "local_file" "polaris_generated_kustomization" {
+  content  = local.polaris_generated_kustomization
+  filename = "${local.polaris_generated_dir}/kustomization.yaml"
 }
 
 resource "local_file" "observability_values_patch" {

@@ -1,0 +1,4 @@
+- op: replace
+  path: /spec/values/dashboard/ingress/hosts
+  value:
+    - polars.home.arpa

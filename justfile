@@ -41,6 +41,7 @@ ensure-cluster-generated-dirs: require-config
     mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/metallb"
     mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/observability"
     mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/pgadmin"
+    mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/polaris"
     mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/alloy"
 
 [private]
@@ -102,6 +103,8 @@ talos-generate:
       -target=local_file.metallb_generated_kustomization \
       -target=local_file.pgadmin_values_patch \
       -target=local_file.pgadmin_generated_kustomization \
+      -target=local_file.polaris_values_patch \
+      -target=local_file.polaris_generated_kustomization \
       -target=local_file.observability_values_patch \
       -target=local_file.observability_generated_kustomization \
       -target=local_file.alloy_values_patch \
@@ -254,6 +257,9 @@ wait-ready: require-talosconfig require-kubeconfig
 bootstrap-cluster: bootstrap-apply bootstrap-etcd bootstrap-kubeconfig wait-ready
 
 tflint: tflint-provision tflint-bootstrap
+
+validate-manifests path='03-infrastructure':
+    bash scripts/validate-gitops-kustomize.sh "{{path}}"
 
 smoke-longhorn-apply: require-kubeconfig
     kubectl --kubeconfig "{{generated_dir}}/kubeconfig" apply -k 03-infrastructure/smoke-tests/longhorn
