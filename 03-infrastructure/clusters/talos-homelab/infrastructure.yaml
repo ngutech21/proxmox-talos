@@ -189,7 +189,7 @@ spec:
   dependsOn:
   - name: infrastructure-observability
   interval: 10m0s
-  path: ./03-infrastructure/infrastructure/alloy/core
+  path: ./03-infrastructure/clusters/talos-homelab/.generated/alloy
   prune: true
   sourceRef:
     kind: GitRepository

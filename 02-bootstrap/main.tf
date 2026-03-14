@@ -299,95 +299,97 @@ locals {
   EOT
 
   alloy_values_patch = <<-EOT
-    - op: replace
-      path: /spec/values/alloy/configMap/content
-      value: |
-        logging {
-          level  = "info"
-          format = "logfmt"
-        }
-
-        discovery.kubernetes "pod" {
-          role = "pod"
-        }
-
-        discovery.relabel "pod_logs" {
-          targets = discovery.kubernetes.pod.targets
-
-          rule {
-            source_labels = ["__meta_kubernetes_namespace"]
-            action        = "replace"
-            target_label  = "namespace"
-          }
-
-          rule {
-            source_labels = ["__meta_kubernetes_pod_name"]
-            action        = "replace"
-            target_label  = "pod"
-          }
-
-          rule {
-            source_labels = ["__meta_kubernetes_pod_container_name"]
-            action        = "replace"
-            target_label  = "container"
-          }
-
-          rule {
-            source_labels = ["__meta_kubernetes_pod_node_name"]
-            action        = "replace"
-            target_label  = "node"
-          }
-
-          rule {
-            source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
-            action        = "replace"
-            target_label  = "app"
-          }
-
-          rule {
-            source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_container_name"]
-            action        = "replace"
-            target_label  = "job"
-            separator     = "/"
-            replacement   = "$1"
-          }
-
-          rule {
-            source_labels = ["__meta_kubernetes_pod_container_id"]
-            action        = "replace"
-            target_label  = "container_runtime"
-            regex         = `^(\\S+):\\/\\/.+$`
-            replacement   = "$1"
-          }
-        }
-
-        loki.source.kubernetes "pod_logs" {
-          targets    = discovery.relabel.pod_logs.output
-          forward_to = [loki.process.pod_logs.receiver]
-        }
-
-        loki.process "pod_logs" {
-          stage.static_labels {
-            values = {
-              cluster = "${var.cluster_name}",
+    - op: add
+      path: /spec/values/alloy
+      value:
+        configMap:
+          content: |
+            logging {
+              level  = "info"
+              format = "logfmt"
             }
-          }
 
-          forward_to = [loki.write.external.receiver]
-        }
+            discovery.kubernetes "pod" {
+              role = "pod"
+            }
 
-        loki.write "external" {
-          endpoint {
-            url = "${var.loki_push_url}"
-          }
-        }
+            discovery.relabel "pod_logs" {
+              targets = discovery.kubernetes.pod.targets
+
+              rule {
+                source_labels = ["__meta_kubernetes_namespace"]
+                action        = "replace"
+                target_label  = "namespace"
+              }
+
+              rule {
+                source_labels = ["__meta_kubernetes_pod_name"]
+                action        = "replace"
+                target_label  = "pod"
+              }
+
+              rule {
+                source_labels = ["__meta_kubernetes_pod_container_name"]
+                action        = "replace"
+                target_label  = "container"
+              }
+
+              rule {
+                source_labels = ["__meta_kubernetes_pod_node_name"]
+                action        = "replace"
+                target_label  = "node"
+              }
+
+              rule {
+                source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+                action        = "replace"
+                target_label  = "app"
+              }
+
+              rule {
+                source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_container_name"]
+                action        = "replace"
+                target_label  = "job"
+                separator     = "/"
+                replacement   = "$1"
+              }
+
+              rule {
+                source_labels = ["__meta_kubernetes_pod_container_id"]
+                action        = "replace"
+                target_label  = "container_runtime"
+                regex         = `^(\\S+):\\/\\/.+$`
+                replacement   = "$1"
+              }
+            }
+
+            loki.source.kubernetes "pod_logs" {
+              targets    = discovery.relabel.pod_logs.output
+              forward_to = [loki.process.pod_logs.receiver]
+            }
+
+            loki.process "pod_logs" {
+              stage.static_labels {
+                values = {
+                  cluster = "${var.cluster_name}",
+                }
+              }
+
+              forward_to = [loki.write.external.receiver]
+            }
+
+            loki.write "external" {
+              endpoint {
+                url = "${var.loki_push_url}"
+              }
+            }
   EOT
 
   alloy_generated_kustomization = <<-EOT
     apiVersion: kustomize.config.k8s.io/v1beta1
     kind: Kustomization
     resources:
-    - ../../../../infrastructure/alloy
+    - ../../../../infrastructure/alloy/core
     patches:
     - path: values-patch.yaml
       target:
