@@ -37,6 +37,12 @@ spec:
               operator: In
               values:
               - cert-manager-cert-manager
+            - key: app.kubernetes.io/component
+              operator: In
+              values:
+              - controller
+              - cainjector
+              - webhook
           topologyKey: kubernetes.io/hostname
     cainjector:
       strategy:
@@ -60,6 +66,12 @@ spec:
                 operator: In
                 values:
                 - cert-manager-cert-manager
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                - controller
+                - cainjector
+                - webhook
             topologyKey: kubernetes.io/hostname
     webhook:
       strategy:
@@ -83,4 +95,10 @@ spec:
                 operator: In
                 values:
                 - cert-manager-cert-manager
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                - controller
+                - cainjector
+                - webhook
             topologyKey: kubernetes.io/hostname
