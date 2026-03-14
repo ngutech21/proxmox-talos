@@ -16,8 +16,7 @@ spec:
         namespace: flux-system
   values:
     installCRDs: true
-    strategy:
-      type: Recreate
+    replicaCount: 2
     affinity:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
@@ -30,23 +29,22 @@ spec:
             - key: node-role.kubernetes.io/control-plane
               operator: DoesNotExist
       podAntiAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-        - labelSelector:
-            matchExpressions:
-            - key: app.kubernetes.io/instance
-              operator: In
-              values:
-              - cert-manager-cert-manager
-            - key: app.kubernetes.io/component
-              operator: In
-              values:
-              - controller
-              - cainjector
-              - webhook
-          topologyKey: kubernetes.io/hostname
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/instance
+                operator: In
+                values:
+                - cert-manager-cert-manager
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                - controller
+            topologyKey: kubernetes.io/hostname
     cainjector:
-      strategy:
-        type: Recreate
+      replicaCount: 1
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -59,23 +57,22 @@ spec:
               - key: node-role.kubernetes.io/control-plane
                 operator: DoesNotExist
         podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-              - key: app.kubernetes.io/instance
-                operator: In
-                values:
-                - cert-manager-cert-manager
-              - key: app.kubernetes.io/component
-                operator: In
-                values:
-                - controller
-                - cainjector
-                - webhook
-            topologyKey: kubernetes.io/hostname
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/instance
+                  operator: In
+                  values:
+                  - cert-manager-cert-manager
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                  - cainjector
+              topologyKey: kubernetes.io/hostname
     webhook:
-      strategy:
-        type: Recreate
+      replicaCount: 2
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -88,17 +85,17 @@ spec:
               - key: node-role.kubernetes.io/control-plane
                 operator: DoesNotExist
         podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-              - key: app.kubernetes.io/instance
-                operator: In
-                values:
-                - cert-manager-cert-manager
-              - key: app.kubernetes.io/component
-                operator: In
-                values:
-                - controller
-                - cainjector
-                - webhook
-            topologyKey: kubernetes.io/hostname
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/instance
+                  operator: In
+                  values:
+                  - cert-manager-cert-manager
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                  - webhook
+              topologyKey: kubernetes.io/hostname
