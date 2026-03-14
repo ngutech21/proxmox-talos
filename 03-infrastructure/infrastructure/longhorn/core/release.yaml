@@ -24,93 +24,23 @@ spec:
       defaultDataLocality: best-effort
     longhornUI:
       replicas: 2
+    longhornManager:
+      resources:
+        requests:
+          cpu: 200m
+          memory: 256Mi
+        limits:
+          cpu: 1000m
+          memory: 512Mi
     defaultSettings:
       defaultDataPath: /var/mnt/longhorn
       defaultDataLocality: best-effort
       defaultReplicaCount: 2
+      systemManagedCSIComponentsResourceLimits: >-
+        {"csi-attacher":{"requests":{"cpu":"50m","memory":"64Mi"},"limits":{"cpu":"250m","memory":"256Mi"}},"csi-provisioner":{"requests":{"cpu":"50m","memory":"64Mi"},"limits":{"cpu":"250m","memory":"256Mi"}},"csi-resizer":{"requests":{"cpu":"50m","memory":"64Mi"},"limits":{"cpu":"250m","memory":"256Mi"}},"csi-snapshotter":{"requests":{"cpu":"50m","memory":"64Mi"},"limits":{"cpu":"250m","memory":"256Mi"}},"node-driver-registrar":{"requests":{"cpu":"10m","memory":"32Mi"},"limits":{"cpu":"100m","memory":"128Mi"}},"longhorn-liveness-probe":{"requests":{"cpu":"10m","memory":"32Mi"},"limits":{"cpu":"100m","memory":"128Mi"}},"longhorn-csi-plugin":{"requests":{"cpu":"100m","memory":"128Mi"},"limits":{"cpu":"500m","memory":"256Mi"}}}
   postRenderers:
     - kustomize:
         patches:
-          - target:
-              kind: Deployment
-              name: csi-attacher
-            patch: |
-              apiVersion: apps/v1
-              kind: Deployment
-              metadata:
-                name: csi-attacher
-              spec:
-                template:
-                  spec:
-                    containers:
-                      - name: csi-attacher
-                        resources:
-                          requests:
-                            cpu: 50m
-                            memory: 64Mi
-                          limits:
-                            cpu: 250m
-                            memory: 256Mi
-          - target:
-              kind: Deployment
-              name: csi-provisioner
-            patch: |
-              apiVersion: apps/v1
-              kind: Deployment
-              metadata:
-                name: csi-provisioner
-              spec:
-                template:
-                  spec:
-                    containers:
-                      - name: csi-provisioner
-                        resources:
-                          requests:
-                            cpu: 50m
-                            memory: 64Mi
-                          limits:
-                            cpu: 250m
-                            memory: 256Mi
-          - target:
-              kind: Deployment
-              name: csi-resizer
-            patch: |
-              apiVersion: apps/v1
-              kind: Deployment
-              metadata:
-                name: csi-resizer
-              spec:
-                template:
-                  spec:
-                    containers:
-                      - name: csi-resizer
-                        resources:
-                          requests:
-                            cpu: 50m
-                            memory: 64Mi
-                          limits:
-                            cpu: 250m
-                            memory: 256Mi
-          - target:
-              kind: Deployment
-              name: csi-snapshotter
-            patch: |
-              apiVersion: apps/v1
-              kind: Deployment
-              metadata:
-                name: csi-snapshotter
-              spec:
-                template:
-                  spec:
-                    containers:
-                      - name: csi-snapshotter
-                        resources:
-                          requests:
-                            cpu: 50m
-                            memory: 64Mi
-                          limits:
-                            cpu: 250m
-                            memory: 256Mi
           - target:
               kind: Deployment
               name: longhorn-driver-deployer
@@ -162,42 +92,6 @@ spec:
                             memory: 128Mi
           - target:
               kind: DaemonSet
-              name: longhorn-csi-plugin
-            patch: |
-              apiVersion: apps/v1
-              kind: DaemonSet
-              metadata:
-                name: longhorn-csi-plugin
-              spec:
-                template:
-                  spec:
-                    containers:
-                      - name: node-driver-registrar
-                        resources:
-                          requests:
-                            cpu: 10m
-                            memory: 32Mi
-                          limits:
-                            cpu: 100m
-                            memory: 128Mi
-                      - name: longhorn-liveness-probe
-                        resources:
-                          requests:
-                            cpu: 10m
-                            memory: 32Mi
-                          limits:
-                            cpu: 100m
-                            memory: 128Mi
-                      - name: longhorn-csi-plugin
-                        resources:
-                          requests:
-                            cpu: 100m
-                            memory: 128Mi
-                          limits:
-                            cpu: 500m
-                            memory: 256Mi
-          - target:
-              kind: DaemonSet
               name: longhorn-manager
             patch: |
               apiVersion: apps/v1
@@ -208,14 +102,6 @@ spec:
                 template:
                   spec:
                     containers:
-                      - name: longhorn-manager
-                        resources:
-                          requests:
-                            cpu: 200m
-                            memory: 256Mi
-                          limits:
-                            cpu: 1000m
-                            memory: 512Mi
                       - name: pre-pull-share-manager-image
                         resources:
                           requests:
@@ -224,16 +110,3 @@ spec:
                           limits:
                             cpu: 50m
                             memory: 64Mi
-          - target:
-              kind: DaemonSet
-              labelSelector: longhorn.io/component=engine-image
-            patch: |
-              - op: add
-                path: /spec/template/spec/containers/0/resources
-                value:
-                  requests:
-                    cpu: 10m
-                    memory: 32Mi
-                  limits:
-                    cpu: 100m
-                    memory: 128Mi
