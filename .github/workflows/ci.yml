@@ -13,6 +13,7 @@ env:
   TF_IN_AUTOMATION: "true"
   TF_VAR_proxmox_api_token_id: "dummy@pam!talos"
   TF_VAR_proxmox_api_token_secret: "00000000-0000-0000-0000-000000000000"
+  POLARIS_VERSION: "9.6.0"
 
 jobs:
   terraform:
@@ -81,6 +82,15 @@ jobs:
           curl -fsSL -o /tmp/kubeconform.tar.gz \
             https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
           tar -xzf /tmp/kubeconform.tar.gz -C "$HOME/.local/bin" kubeconform
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install Polaris
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL -o /tmp/polaris.tar.gz \
+            "https://github.com/FairwindsOps/polaris/releases/download/${POLARIS_VERSION}/polaris_linux_amd64.tar.gz"
+          tar -xzf /tmp/polaris.tar.gz -C "$HOME/.local/bin" polaris
+          chmod +x "$HOME/.local/bin/polaris"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Check Flux Kustomization paths
