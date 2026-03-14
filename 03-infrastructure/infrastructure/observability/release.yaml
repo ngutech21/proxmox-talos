@@ -20,8 +20,23 @@ spec:
   values:
     grafana:
       enabled: false
+    prometheusOperator:
+      resources:
+        requests:
+          cpu: 25m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
     kube-state-metrics:
       replicas: 2
+      resources:
+        requests:
+          cpu: 25m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
       rbac:
         extraRules:
         - apiGroups:
