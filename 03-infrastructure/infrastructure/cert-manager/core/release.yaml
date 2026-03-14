@@ -26,8 +26,6 @@ spec:
               operator: In
               values:
               - linux
-            - key: node-role.kubernetes.io/control-plane
-              operator: DoesNotExist
       podAntiAffinity:
         preferredDuringSchedulingIgnoredDuringExecution:
         - weight: 100
@@ -43,6 +41,10 @@ spec:
                 values:
                 - controller
             topologyKey: kubernetes.io/hostname
+    tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
     cainjector:
       replicaCount: 1
       affinity:
@@ -54,8 +56,6 @@ spec:
                 operator: In
                 values:
                 - linux
-              - key: node-role.kubernetes.io/control-plane
-                operator: DoesNotExist
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 100
@@ -71,6 +71,10 @@ spec:
                   values:
                   - cainjector
               topologyKey: kubernetes.io/hostname
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
     webhook:
       replicaCount: 2
       affinity:
@@ -82,8 +86,6 @@ spec:
                 operator: In
                 values:
                 - linux
-              - key: node-role.kubernetes.io/control-plane
-                operator: DoesNotExist
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 100
@@ -99,3 +101,7 @@ spec:
                   values:
                   - webhook
               topologyKey: kubernetes.io/hostname
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
