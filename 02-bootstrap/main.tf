@@ -304,12 +304,13 @@ locals {
     ]
   })
 
-  polaris_values_patch = <<-EOT
-    - op: replace
-      path: /spec/values/dashboard/ingress/hosts
-      value:
-        - ${var.polaris_host}
-  EOT
+  polaris_values_patch = yamlencode([
+    {
+      op    = "replace"
+      path  = "/spec/values/dashboard/ingress/hosts"
+      value = [var.polaris_host]
+    }
+  ])
 
   polaris_generated_kustomization = yamlencode({
     apiVersion = "kustomize.config.k8s.io/v1beta1"

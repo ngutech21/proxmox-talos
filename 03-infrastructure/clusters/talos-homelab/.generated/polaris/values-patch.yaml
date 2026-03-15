@@ -1,4 +1,4 @@
-- op: replace
-  path: /spec/values/dashboard/ingress/hosts
-  value:
-    - yes
+- "op": "replace"
+  "path": "/spec/values/dashboard/ingress/hosts"
+  "value":
+  - "polaris.home.arpa"
