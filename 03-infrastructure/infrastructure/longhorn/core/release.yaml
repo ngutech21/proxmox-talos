@@ -90,23 +90,3 @@ spec:
                           limits:
                             cpu: 250m
                             memory: 128Mi
-          - target:
-              kind: DaemonSet
-              name: longhorn-manager
-            patch: |
-              apiVersion: apps/v1
-              kind: DaemonSet
-              metadata:
-                name: longhorn-manager
-              spec:
-                template:
-                  spec:
-                    containers:
-                      - name: pre-pull-share-manager-image
-                        resources:
-                          requests:
-                            cpu: 10m
-                            memory: 32Mi
-                          limits:
-                            cpu: 50m
-                            memory: 64Mi
