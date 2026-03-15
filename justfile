@@ -40,7 +40,6 @@ ensure-cluster-generated-dirs: require-config
     fi
     mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/metallb"
     mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/observability"
-    mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/pgadmin"
     mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/polaris"
     mkdir -p "{{infrastructure_dir}}/clusters/$cluster_name/.generated/alloy"
 
@@ -101,8 +100,6 @@ talos-generate:
       -target=local_sensitive_file.talosconfig \
       -target=local_file.metallb_ip_address_pool \
       -target=local_file.metallb_generated_kustomization \
-      -target=local_file.pgadmin_values_patch \
-      -target=local_file.pgadmin_generated_kustomization \
       -target=local_file.polaris_values_patch \
       -target=local_file.polaris_generated_kustomization \
       -target=local_file.observability_values_patch \
@@ -128,18 +125,6 @@ provision-vms: require-config provision-init provision-plan provision-apply
 bootstrap-render: require-config ensure-generated-dir ensure-cluster-generated-dirs provision-init provision-refresh talos-init talos-plan talos-apply
 
 generate-artifacts: require-config ensure-generated-dir ensure-cluster-generated-dirs talos-init talos-generate
-
-pgadmin-secret password='': require-config ensure-cluster-generated-dirs
-    #!/usr/bin/env bash
-    set -euo pipefail
-    cluster_name="$(sed -nE 's/^cluster_name[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' "{{cluster_config}}" | head -n1)"
-    if [ -z "$cluster_name" ]; then
-      echo "Could not determine cluster_name from {{cluster_config}}." >&2
-      exit 1
-    fi
-    output_path="$PWD/03-infrastructure/clusters/$cluster_name/.generated/pgadmin/credentials-secret.sops.yaml"
-    zsh "$PWD/scripts/create-pgadmin-secret.sh" "$output_path" "{{password}}"
-    just generate-artifacts
 
 bootstrap-apply-config: require-config ensure-generated-dir
     #!/usr/bin/env bash

@@ -44,12 +44,8 @@ Current structure:
   retention and PVC sizing are trimmed for homelab use to reduce steady Longhorn write load
 - `infrastructure/alloy/`
   minimal Grafana Alloy install that collects pod logs and forwards them to an external Loki endpoint
-- `apps/pgadmin/`
-  pgAdmin 4 as a concrete app workload, using Longhorn for persistence and Traefik ingress at `pgadmin.home.arpa`
 - `apps/polaris/`
   Fairwinds Polaris dashboard as a Flux-managed Helm workload, exposed through Traefik at the configured `polaris_host`
-- `clusters/<cluster-name>/.generated/pgadmin/`
-  cluster-specific generated overlay for pgAdmin values such as ingress host and PVC size; the encrypted credentials secret can be created with `just pgadmin-secret`
 - `clusters/<cluster-name>/.generated/polaris/`
   cluster-specific generated overlay for the Polaris ingress host, derived from the root `polaris_host`
 - `clusters/<cluster-name>/.generated/alloy/`

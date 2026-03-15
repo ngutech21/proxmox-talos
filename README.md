@@ -122,7 +122,7 @@ If worker data disks are configured, worker nodes also get a Talos `UserVolumeCo
    which reconciles shared platform components such as MetalLB, Traefik, cert-manager,
    Longhorn, CloudNativePG, Prometheus, Alertmanager, and Alloy.
 
-8. If you use SOPS-encrypted app secrets such as pgAdmin credentials, import your Age private key into Flux:
+8. If you use SOPS-encrypted manifests such as the Postgres smoke test secrets, import your Age private key into Flux:
 
    ```bash
    just install-sops-age age_key_file=/path/to/age-key.txt
@@ -171,7 +171,6 @@ vm_dns_servers = ["192.168.178.1", "1.1.1.1"]
 
 metallb_addresses     = ["192.168.178.240-192.168.178.249"]
 base_domain           = "home.arpa"
-pgadmin_storage_size  = "5Gi"
 polaris_host          = "polaris.home.arpa"
 prometheus_host       = "prometheus.home.arpa"
 loki_push_url         = "http://loki.home.arpa:3100/loki/api/v1/push"

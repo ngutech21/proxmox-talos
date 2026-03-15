@@ -18,7 +18,6 @@ locals {
   longhorn_mount_path         = "/var/mnt/longhorn"
   cluster_generated_dir       = "${path.module}/../03-infrastructure/clusters/${var.cluster_name}/.generated"
   metallb_generated_dir       = "${local.cluster_generated_dir}/metallb"
-  pgadmin_generated_dir       = "${local.cluster_generated_dir}/pgadmin"
   polaris_generated_dir       = "${local.cluster_generated_dir}/polaris"
   observability_generated_dir = "${local.cluster_generated_dir}/observability"
   alloy_generated_dir         = "${local.cluster_generated_dir}/alloy"
@@ -256,48 +255,6 @@ locals {
 
   resolved_prometheus_host = trimspace(var.prometheus_host) != "" ? var.prometheus_host : "prometheus.${var.base_domain}"
 
-  pgadmin_values_patch = <<-EOT
-    - op: add
-      path: /spec/values/env
-      value:
-        email: pgadmin@home.de
-    - op: replace
-      path: /spec/values/persistentVolume/size
-      value: ${var.pgadmin_storage_size}
-    - op: replace
-      path: /spec/values/ingress/hosts
-      value:
-        - host: pgadmin.${var.base_domain}
-          paths:
-            - path: /
-              pathType: Prefix
-  EOT
-
-  pgadmin_generated_kustomization = yamlencode({
-    apiVersion = "kustomize.config.k8s.io/v1beta1"
-    kind       = "Kustomization"
-    resources = concat(
-      [
-        "../../../../apps/pgadmin",
-      ],
-      fileexists("${local.pgadmin_generated_dir}/credentials-secret.sops.yaml") ? [
-        "credentials-secret.sops.yaml",
-      ] : []
-    )
-    patches = [
-      {
-        path = "values-patch.yaml"
-        target = {
-          group     = "helm.toolkit.fluxcd.io"
-          version   = "v2"
-          kind      = "HelmRelease"
-          name      = "pgadmin"
-          namespace = "flux-system"
-        }
-      },
-    ]
-  })
-
   polaris_values_patch = yamlencode([
     {
       op    = "replace"
@@ -482,20 +439,6 @@ resource "local_file" "metallb_ip_address_pool" {
 resource "local_file" "metallb_generated_kustomization" {
   content              = local.metallb_generated_kustomization
   filename             = "${local.metallb_generated_dir}/kustomization.yaml"
-  directory_permission = "0755"
-  file_permission      = "0644"
-}
-
-resource "local_file" "pgadmin_values_patch" {
-  content              = local.pgadmin_values_patch
-  filename             = "${local.pgadmin_generated_dir}/values-patch.yaml"
-  directory_permission = "0755"
-  file_permission      = "0644"
-}
-
-resource "local_file" "pgadmin_generated_kustomization" {
-  content              = local.pgadmin_generated_kustomization
-  filename             = "${local.pgadmin_generated_dir}/kustomization.yaml"
   directory_permission = "0755"
   file_permission      = "0644"
 }

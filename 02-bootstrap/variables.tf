@@ -232,17 +232,6 @@ variable "metallb_addresses" {
   }
 }
 
-variable "pgadmin_storage_size" {
-  description = "Persistent volume size for the pgAdmin workload"
-  type        = string
-  default     = "5Gi"
-
-  validation {
-    condition     = trimspace(var.pgadmin_storage_size) != ""
-    error_message = "pgadmin_storage_size must not be empty."
-  }
-}
-
 variable "polaris_host" {
   description = "Ingress host for the Polaris dashboard"
   type        = string
