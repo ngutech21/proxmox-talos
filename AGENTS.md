@@ -66,6 +66,39 @@ Flux CD is responsible for platform and app delivery after the cluster exists:
 
 Flux CD should not be required for the initial Talos bootstrap.
 
+## Repository-Specific Ownership Rules
+
+- Treat `Talos` as the owner of Kubernetes control plane and Talos-provided system components.
+- Treat `Flux CD` as the owner of platform add-ons and user workloads under `03-infrastructure/`.
+- Do not try to patch Talos-managed control plane components through Flux or Kustomize overlays.
+
+Talos-managed in this repo includes at least:
+
+- `kube-apiserver`
+- `kube-controller-manager`
+- `kube-scheduler`
+- `kube-proxy`
+- `kube-flannel`
+
+If a finding or change request targets one of those components, prefer changes in `02-bootstrap/` Talos machine configuration generation over Flux manifests.
+
+## Generated Artifacts Rules
+
+- Files under `02-bootstrap/.generated/` and `03-infrastructure/clusters/<cluster-name>/.generated/` are derived artifacts, not the primary source of truth.
+- When changing inputs in `cluster.tfvars`, `cluster.secrets.tfvars`, or generator logic in `02-bootstrap/`, regenerate artifacts with `just generate-artifacts`.
+- When generated artifacts are changed unexpectedly, verify whether the source input or generator logic changed before editing generated output directly.
+- Prefer making generator fixes in `02-bootstrap/` rather than hand-editing `.generated/` files.
+
+## Helm Override Rules
+
+- Prefer native Helm chart `values` over `postRenderers` whenever the chart supports the desired setting.
+- Use `postRenderers` only as a last resort when the upstream chart does not expose a needed field.
+- Avoid `postRenderers` that can change container ordering in generated manifests unless there is no alternative.
+
+Longhorn-specific rule:
+
+- Do not use `postRenderers` on `longhorn-manager` in a way that changes container order. In this repo that can break the Longhorn `post-upgrade` hook, which assumes the primary manager container is at index `0`.
+
 ## MVP Scope
 
 The first version should stay intentionally small:
