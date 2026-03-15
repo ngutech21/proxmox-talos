@@ -12,6 +12,163 @@ infrastructure_dir := "03-infrastructure"
 default:
     @just --list
 
+doctor:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    status=0
+
+    ok() {
+      printf 'OK   %s\n' "$1"
+    }
+
+    warn() {
+      printf 'WARN %s\n' "$1"
+    }
+
+    fail() {
+      printf 'FAIL %s\n' "$1" >&2
+      status=1
+    }
+
+    require_tool() {
+      local tool="$1"
+      local purpose="$2"
+      if command -v "$tool" >/dev/null 2>&1; then
+        ok "tool '$tool' is installed ($purpose)"
+      else
+        fail "missing tool '$tool' ($purpose)"
+      fi
+    }
+
+    optional_tool() {
+      local tool="$1"
+      local purpose="$2"
+      if command -v "$tool" >/dev/null 2>&1; then
+        ok "optional tool '$tool' is installed ($purpose)"
+      else
+        warn "optional tool '$tool' is not installed ($purpose)"
+      fi
+    }
+
+    require_file() {
+      local path="$1"
+      if [ -f "$path" ]; then
+        ok "file '$path' exists"
+      else
+        fail "missing file '$path'"
+      fi
+    }
+
+    require_setting() {
+      local file="$1"
+      local pattern="$2"
+      local label="$3"
+      if grep -Eq "$pattern" "$file"; then
+        ok "$label is set in $file"
+      else
+        fail "$label is missing in $file"
+      fi
+    }
+
+    echo "== Tools =="
+    require_tool just "task runner"
+    require_tool terraform "Terraform stages"
+    require_tool talosctl "Talos bootstrap and operations"
+    require_tool kubectl "cluster access"
+    require_tool jq "bootstrap endpoint parsing"
+    require_tool git "Flux bootstrap repository discovery"
+    require_tool flux "Flux bootstrap and reconcile commands"
+    optional_tool age "SOPS key management"
+    optional_tool sops "secret encryption"
+    optional_tool tflint "Terraform linting"
+    optional_tool polaris "manifest auditing"
+    optional_tool kubeconform "manifest schema validation"
+
+    echo
+    echo "== Config Files =="
+    require_file "{{cluster_config}}"
+    require_file "{{cluster_secrets}}"
+
+    if [ -f "{{cluster_config}}" ]; then
+      require_setting "{{cluster_config}}" '^cluster_name[[:space:]]*=[[:space:]]*"[^"]+"' "cluster_name"
+      require_setting "{{cluster_config}}" '^api_vip[[:space:]]*=[[:space:]]*"[^"]+"' "api_vip"
+      require_setting "{{cluster_config}}" '^polaris_host[[:space:]]*=[[:space:]]*"[^"]+"' "polaris_host"
+      require_setting "{{cluster_config}}" '^loki_push_url[[:space:]]*=[[:space:]]*"https?://.*/loki/api/v1/push"' "loki_push_url"
+
+      if grep -Eq '^proxmox_api_url[[:space:]]*=[[:space:]]*"https://pve\.example\.internal:8006/api2/json"' "{{cluster_config}}"; then
+        fail "proxmox_api_url still uses the example value"
+      else
+        ok "proxmox_api_url does not use the example value"
+      fi
+
+      if grep -Eq '^talos_installer_image[[:space:]]*=[[:space:]]*".*<schematic-id>.*"' "{{cluster_config}}"; then
+        fail "talos_installer_image still contains the <schematic-id> placeholder"
+      else
+        ok "talos_installer_image does not contain the example placeholder"
+      fi
+
+      control_plane_count="$(grep -Ec 'role[[:space:]]*=[[:space:]]*"control_plane"' "{{cluster_config}}" || true)"
+      if [ "${control_plane_count:-0}" -ge 1 ]; then
+        ok "cluster.tfvars declares at least one control-plane node"
+      else
+        fail "cluster.tfvars does not declare a control-plane node"
+      fi
+
+      cluster_name="$(sed -nE 's/^cluster_name[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' "{{cluster_config}}" | head -n1)"
+      if [ -n "$cluster_name" ]; then
+        if [ -f "{{infrastructure_dir}}/clusters/$cluster_name/kustomization.yaml" ]; then
+          ok "cluster entrypoint exists for '$cluster_name'"
+        else
+          fail "missing {{infrastructure_dir}}/clusters/$cluster_name/kustomization.yaml"
+        fi
+      fi
+    fi
+
+    if [ -f "{{cluster_secrets}}" ]; then
+      require_setting "{{cluster_secrets}}" '^proxmox_api_token_id[[:space:]]*=[[:space:]]*"[^"]+"' "proxmox_api_token_id"
+      require_setting "{{cluster_secrets}}" '^proxmox_api_token_secret[[:space:]]*=[[:space:]]*"[^"]+"' "proxmox_api_token_secret"
+
+      if grep -Eq '^proxmox_api_token_secret[[:space:]]*=[[:space:]]*"00000000-0000-0000-0000-000000000000"' "{{cluster_secrets}}"; then
+        fail "proxmox_api_token_secret still uses the example placeholder"
+      else
+        ok "proxmox_api_token_secret does not use the example placeholder"
+      fi
+    fi
+
+    echo
+    echo "== Local State =="
+    if [ -f "{{generated_dir}}/talosconfig" ]; then
+      ok "generated talosconfig exists"
+    else
+      warn "generated talosconfig is missing; run 'just bootstrap-cluster' or 'just generate-artifacts'"
+    fi
+
+    if [ -f "{{generated_dir}}/kubeconfig" ]; then
+      ok "generated kubeconfig exists"
+    else
+      warn "generated kubeconfig is missing; run 'just bootstrap-cluster'"
+    fi
+
+    if git remote get-url origin >/dev/null 2>&1; then
+      ok "git remote 'origin' is configured"
+    else
+      warn "git remote 'origin' is missing; 'just install-flux' will need owner= and repo="
+    fi
+
+    if [ -f "{{infrastructure_dir}}/clusters/talos-homelab/flux-system/gotk-sync.yaml" ]; then
+      ok "Flux bootstrap manifests are present in the repo"
+    else
+      warn "Flux bootstrap manifests are not present yet; run 'just install-flux' after cluster bootstrap"
+    fi
+
+    echo
+    if [ "$status" -eq 0 ]; then
+      echo "Doctor checks passed."
+    else
+      echo "Doctor found one or more blocking issues." >&2
+      exit "$status"
+    fi
+
 init-config:
     if [ -f "{{cluster_config}}" ]; then echo "{{cluster_config}} already exists" >&2; exit 1; fi
     if [ -f "{{cluster_secrets}}" ]; then echo "{{cluster_secrets}} already exists" >&2; exit 1; fi

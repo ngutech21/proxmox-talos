@@ -63,7 +63,7 @@ After the main bootstrap flow, you have:
 - a declared Kubernetes API endpoint via `api_vip`
 - generated `02-bootstrap/.generated/talosconfig`
 - generated `02-bootstrap/.generated/kubeconfig`
-- an optional GitOps bootstrap path via Flux
+- a GitOps bootstrap path via Flux
 - MetalLB for `LoadBalancer` services
 - Traefik as the ingress controller
 - Longhorn as the storage layer
@@ -83,35 +83,47 @@ If worker data disks are configured, worker nodes also get a Talos `UserVolumeCo
    just init-config
    ```
 
-2. Edit `cluster.tfvars` with:
+2. Run the local preflight:
+
+   ```bash
+   just doctor
+   ```
+
+3. Edit `cluster.tfvars` with:
    - your Proxmox API endpoint
    - your node layout
    - your static IP plan
    - your Talos image settings
    - your `api_vip`
 
-3. Edit `cluster.secrets.tfvars` with your Proxmox API token values.
+4. Edit `cluster.secrets.tfvars` with your Proxmox API token values.
 
-4. Provision the VMs:
+5. Run the preflight again after editing the config:
+
+   ```bash
+   just doctor
+   ```
+
+6. Provision the VMs:
 
    ```bash
    just provision-vms
    ```
 
-5. Bootstrap Talos and generate access artifacts:
+7. Bootstrap Talos and generate access artifacts:
 
    ```bash
    just bootstrap-cluster
    ```
 
-6. Use the generated kubeconfig:
+8. Use the generated kubeconfig:
 
    ```bash
    export KUBECONFIG="$(pwd)/02-bootstrap/.generated/kubeconfig"
    kubectl get nodes
    ```
 
-7. Optionally bootstrap Flux into this repository:
+9. Bootstrap Flux into this repository:
 
    ```bash
    export GITHUB_TOKEN='<github-pat>'
@@ -122,7 +134,7 @@ If worker data disks are configured, worker nodes also get a Talos `UserVolumeCo
    which reconciles shared platform components such as MetalLB, Traefik, cert-manager,
    Longhorn, CloudNativePG, Prometheus, Alertmanager, and Alloy.
 
-8. If you use SOPS-encrypted manifests such as the Postgres smoke test secrets, import your Age private key into Flux:
+10. If you use SOPS-encrypted manifests such as the Postgres smoke test secrets, import your Age private key into Flux:
 
    ```bash
    just install-sops-age age_key_file=/path/to/age-key.txt
@@ -215,6 +227,7 @@ It is responsible for:
 Useful commands:
 
 ```bash
+just doctor
 just bootstrap-cluster
 just bootstrap-render
 just bootstrap-apply-config
