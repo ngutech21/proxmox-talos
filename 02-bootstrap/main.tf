@@ -272,7 +272,7 @@ locals {
     - op: replace
       path: /spec/values/dashboard/ingress/hosts
       value:
-        - ${var.polars_host}
+        - ${var.polaris_host}
   EOT
 
   polaris_generated_kustomization = yamlencode({

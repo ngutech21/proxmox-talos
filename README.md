@@ -172,7 +172,7 @@ vm_dns_servers = ["192.168.178.1", "1.1.1.1"]
 metallb_addresses     = ["192.168.178.240-192.168.178.249"]
 base_domain           = "home.arpa"
 pgadmin_storage_size  = "5Gi"
-polars_host           = "polars.home.arpa"
+polaris_host          = "polaris.home.arpa"
 prometheus_host       = "prometheus.home.arpa"
 loki_push_url         = "http://loki.home.arpa:3100/loki/api/v1/push"
 ```

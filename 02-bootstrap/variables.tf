@@ -243,13 +243,13 @@ variable "pgadmin_storage_size" {
   }
 }
 
-variable "polars_host" {
+variable "polaris_host" {
   description = "Ingress host for the Polaris dashboard"
   type        = string
 
   validation {
-    condition     = trimspace(var.polars_host) != ""
-    error_message = "polars_host must not be empty."
+    condition     = trimspace(var.polaris_host) != ""
+    error_message = "polaris_host must not be empty."
   }
 }
 
