@@ -121,8 +121,44 @@ locals {
       )
 
       cluster = {
+        apiServer = {
+          resources = {
+            requests = {
+              cpu    = "200m"
+              memory = "512Mi"
+            }
+            limits = {
+              cpu    = "1000m"
+              memory = "1Gi"
+            }
+          }
+        }
+        controllerManager = {
+          resources = {
+            requests = {
+              cpu    = "50m"
+              memory = "256Mi"
+            }
+            limits = {
+              cpu    = "500m"
+              memory = "512Mi"
+            }
+          }
+        }
         network = {
           dnsDomain = var.talos_dns_domain
+        }
+        scheduler = {
+          resources = {
+            requests = {
+              cpu    = "10m"
+              memory = "64Mi"
+            }
+            limits = {
+              cpu    = "200m"
+              memory = "256Mi"
+            }
+          }
         }
       }
     })
