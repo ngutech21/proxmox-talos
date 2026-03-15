@@ -206,8 +206,9 @@ This stage owns cluster bring-up.
 It is responsible for:
 
 - generating Talos machine configs
-- applying Talos config to each node
+- rendering Talos config and client artifacts for each node
 - setting static addresses, gateway, DNS, hostname, and control-plane VIP
+- applying Talos config to each node with `talosctl`
 - bootstrapping the cluster
 - retrieving `talosconfig` and `kubeconfig`
 - running readiness checks
@@ -216,6 +217,11 @@ Useful commands:
 
 ```bash
 just bootstrap-cluster
+just bootstrap-render
+just bootstrap-apply-config
+just bootstrap-etcd
+just bootstrap-kubeconfig
+just bootstrap-wait-ready
 just generate-artifacts
 just kubeconfig
 just print-cluster-info
@@ -225,10 +231,12 @@ just print-cluster-info
 
 - Talos secrets generation inside Terraform state
 - one machine config per node
-- config apply to the currently reachable VM addresses, preferring the declared node IP once it is active and otherwise falling back to the Proxmox guest agent
+- config apply with `talosctl apply-config` to the currently reachable VM addresses, preferring the declared node IP once it is active and otherwise falling back to the Proxmox guest agent
 - `talosctl bootstrap` on the first control-plane node
 - `talosctl kubeconfig` into `02-bootstrap/.generated/kubeconfig`
 - Talos and Kubernetes readiness checks
+
+`just bootstrap-render` only renders the Talos machine configs, `talosconfig`, and generated cluster-local artifacts. It does not push config to nodes.
 
 `just generate-artifacts` only refreshes the locally generated Terraform artifacts from `02-bootstrap`, such as:
 

@@ -124,8 +124,8 @@ tflint-bootstrap:
 
 provision-vms: require-config provision-init provision-plan provision-apply
 
-[private]
-bootstrap-apply: require-config ensure-generated-dir ensure-cluster-generated-dirs provision-init provision-refresh talos-init talos-plan talos-apply
+# Render Talos artifacts and generated overlays; `talosctl` handles apply/bootstrap.
+bootstrap-render: require-config ensure-generated-dir ensure-cluster-generated-dirs provision-init provision-refresh talos-init talos-plan talos-apply
 
 generate-artifacts: require-config ensure-generated-dir ensure-cluster-generated-dirs talos-init talos-generate
 
@@ -141,7 +141,53 @@ pgadmin-secret password='': require-config ensure-cluster-generated-dirs
     zsh "$PWD/scripts/create-pgadmin-secret.sh" "$output_path" "{{password}}"
     just generate-artifacts
 
-[private]
+bootstrap-apply-config: require-config ensure-generated-dir
+    #!/usr/bin/env bash
+    set -euo pipefail
+    kubeconfig_path="$(pwd)/{{generated_dir}}/kubeconfig"
+    if [ -f "$kubeconfig_path" ] && kubectl --kubeconfig "$kubeconfig_path" get nodes >/dev/null 2>&1; then
+      echo "Cluster already reachable with existing kubeconfig; skipping talos apply-config"
+      exit 0
+    fi
+    if ! command -v jq >/dev/null 2>&1; then
+      echo "Missing jq. Install jq to use 'just bootstrap-apply-config'." >&2
+      exit 1
+    fi
+
+    bootstrap_endpoints_json="$(terraform -chdir=02-bootstrap output -json bootstrap_endpoints)"
+    missing_nodes="$(printf '%s' "$bootstrap_endpoints_json" | jq -r 'to_entries[] | select(.value == null or .value == "") | .key')"
+    if [ -n "$missing_nodes" ]; then
+      printf 'Missing current IPv4 addresses from 01-provision for nodes:\n%s\n' "$missing_nodes" >&2
+      echo "Ensure the boot image starts qemu-guest-agent, rerun 'just provision-vms', and then rerun 'just bootstrap-cluster'." >&2
+      exit 1
+    fi
+
+    while IFS=$'\t' read -r node_name endpoint; do
+      config_path="$(pwd)/{{generated_dir}}/${node_name}.yaml"
+      if [ ! -f "$config_path" ]; then
+        echo "Missing machine config '$config_path'. Run 'just bootstrap-render' first." >&2
+        exit 1
+      fi
+
+      deadline=$((SECONDS + 1200))
+      while true; do
+        if output="$(talosctl apply-config --insecure --mode=reboot --nodes "$endpoint" --endpoints "$endpoint" --file "$config_path" 2>&1)"; then
+          printf '%s\n' "$output"
+          break
+        fi
+        if ! printf '%s' "$output" | grep -Eqi "connection refused|connect: no route to host|connect: host is down|transport: Error while dialing|rpc error: code = Unavailable|context deadline exceeded|i/o timeout|EOF|tls: first record does not look like a TLS handshake"; then
+          printf '%s\n' "$output" >&2
+          exit 1
+        fi
+        if [ "$SECONDS" -ge "$deadline" ]; then
+          printf '%s\n' "$output" >&2
+          echo "Timed out applying Talos config to $node_name via $endpoint" >&2
+          exit 1
+        fi
+        sleep 10
+      done
+    done < <(printf '%s' "$bootstrap_endpoints_json" | jq -r 'to_entries[] | [.key, .value] | @tsv')
+
 bootstrap-etcd: require-talosconfig
     #!/usr/bin/env bash
     set -euo pipefail
@@ -166,7 +212,11 @@ bootstrap-etcd: require-talosconfig
         break
       fi
       if printf '%s' "$output" | grep -Eqi "bootstrap is not available yet|already bootstrapped|AlreadyExists|etcd data directory is not empty"; then
-        printf '%s\n' "$output"
+        if printf '%s' "$output" | grep -Eqi "bootstrap is not available yet"; then
+          echo "Talos bootstrap is not available yet on $bootstrap_node; retrying..." >&2
+        else
+          printf '%s\n' "$output"
+        fi
         if printf '%s' "$output" | grep -Eqi "already bootstrapped|AlreadyExists|etcd data directory is not empty"; then
           break
         fi
@@ -184,7 +234,6 @@ bootstrap-etcd: require-talosconfig
       sleep 10
     done
 
-[private]
 bootstrap-kubeconfig: require-talosconfig ensure-generated-dir
     #!/usr/bin/env bash
     set -euo pipefail
@@ -209,8 +258,7 @@ bootstrap-kubeconfig: require-talosconfig ensure-generated-dir
       sleep 10
     done
 
-[private]
-wait-ready: require-talosconfig require-kubeconfig
+bootstrap-wait-ready: require-talosconfig require-kubeconfig
     #!/usr/bin/env bash
     set -euo pipefail
     api_vip="$(terraform -chdir=02-bootstrap output -raw api_vip)"
@@ -242,7 +290,7 @@ wait-ready: require-talosconfig require-kubeconfig
         echo "Timed out waiting for Kubernetes nodes to become Ready" >&2
         exit 1
       fi
-      if printf '%s' "$output" | grep -Eqi "connection refused|EOF|i/o timeout|Unable to connect to the server|net/http: TLS handshake timeout|the server is currently unable to handle the request"; then
+      if printf '%s' "$output" | grep -Eqi "connection refused|EOF|i/o timeout|Unable to connect to the server|The connection to the server .* was refused|net/http: TLS handshake timeout|the server is currently unable to handle the request"; then
         sleep 10
         continue
       fi
@@ -254,7 +302,7 @@ wait-ready: require-talosconfig require-kubeconfig
       echo "talosctl health did not fully converge after Kubernetes became Ready; continuing" >&2
     fi
 
-bootstrap-cluster: bootstrap-apply bootstrap-etcd bootstrap-kubeconfig wait-ready
+bootstrap-cluster: bootstrap-render bootstrap-apply-config bootstrap-etcd bootstrap-kubeconfig bootstrap-wait-ready
 
 tflint: tflint-provision tflint-bootstrap
 

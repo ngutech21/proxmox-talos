@@ -57,11 +57,6 @@ locals {
     for name, node in local.nodes_by_name : name => try(local.provision_nodes_by_name[name].current_ip, null)
   }
 
-  missing_bootstrap_endpoints = [
-    for name, endpoint in local.bootstrap_endpoints : name
-    if endpoint == null || trimspace(endpoint) == ""
-  ]
-
   bootstrap_node = local.control_plane_nodes[0]
 
   machine_config_patches = {
@@ -163,6 +158,15 @@ locals {
       }
     })
   }
+
+  hostname_config_patches = {
+    for name, node in local.nodes_by_name : name => yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "HostnameConfig"
+      hostname   = name
+      auto       = "off"
+    })
+  }
 }
 
 locals {
@@ -191,17 +195,6 @@ data "terraform_remote_state" "provision" {
   }
 }
 
-resource "terraform_data" "bootstrap_endpoints_ready" {
-  input = local.bootstrap_endpoints
-
-  lifecycle {
-    precondition {
-      condition     = length(local.missing_bootstrap_endpoints) == 0
-      error_message = "Missing current IPv4 addresses from 01-provision for nodes: ${join(", ", local.missing_bootstrap_endpoints)}. Ensure the boot image starts qemu-guest-agent, rerun `just provision-vms`, and then rerun `just bootstrap-cluster`."
-    }
-  }
-}
-
 resource "talos_machine_secrets" "cluster" {
   talos_version = var.talos_version
 }
@@ -218,7 +211,8 @@ data "talos_machine_configuration" "node" {
   docs               = false
   examples           = false
   config_patches = [
-    local.machine_config_patches[each.key]
+    local.machine_config_patches[each.key],
+    local.hostname_config_patches[each.key],
   ]
 }
 
@@ -466,25 +460,6 @@ locals {
   EOT
 }
 
-resource "talos_machine_configuration_apply" "node" {
-  for_each = local.nodes_by_name
-
-  depends_on = [
-    terraform_data.bootstrap_endpoints_ready
-  ]
-
-  client_configuration        = talos_machine_secrets.cluster.client_configuration
-  machine_configuration_input = local.rendered_machine_configuration[each.key]
-  apply_mode                  = "reboot"
-  endpoint                    = local.bootstrap_endpoints[each.key]
-  node                        = local.bootstrap_endpoints[each.key]
-
-  timeouts = {
-    create = "20m"
-    update = "20m"
-  }
-}
-
 resource "local_sensitive_file" "machine_config" {
   for_each = data.talos_machine_configuration.node
 
@@ -498,51 +473,71 @@ resource "local_sensitive_file" "talosconfig" {
 }
 
 resource "local_file" "metallb_ip_address_pool" {
-  content  = local.metallb_ip_address_pool
-  filename = "${local.metallb_generated_dir}/ip-address-pool.yaml"
+  content              = local.metallb_ip_address_pool
+  filename             = "${local.metallb_generated_dir}/ip-address-pool.yaml"
+  directory_permission = "0755"
+  file_permission      = "0644"
 }
 
 resource "local_file" "metallb_generated_kustomization" {
-  content  = local.metallb_generated_kustomization
-  filename = "${local.metallb_generated_dir}/kustomization.yaml"
+  content              = local.metallb_generated_kustomization
+  filename             = "${local.metallb_generated_dir}/kustomization.yaml"
+  directory_permission = "0755"
+  file_permission      = "0644"
 }
 
 resource "local_file" "pgadmin_values_patch" {
-  content  = local.pgadmin_values_patch
-  filename = "${local.pgadmin_generated_dir}/values-patch.yaml"
+  content              = local.pgadmin_values_patch
+  filename             = "${local.pgadmin_generated_dir}/values-patch.yaml"
+  directory_permission = "0755"
+  file_permission      = "0644"
 }
 
 resource "local_file" "pgadmin_generated_kustomization" {
-  content  = local.pgadmin_generated_kustomization
-  filename = "${local.pgadmin_generated_dir}/kustomization.yaml"
+  content              = local.pgadmin_generated_kustomization
+  filename             = "${local.pgadmin_generated_dir}/kustomization.yaml"
+  directory_permission = "0755"
+  file_permission      = "0644"
 }
 
 resource "local_file" "polaris_values_patch" {
-  content  = local.polaris_values_patch
-  filename = "${local.polaris_generated_dir}/values-patch.yaml"
+  content              = local.polaris_values_patch
+  filename             = "${local.polaris_generated_dir}/values-patch.yaml"
+  directory_permission = "0755"
+  file_permission      = "0644"
 }
 
 resource "local_file" "polaris_generated_kustomization" {
-  content  = local.polaris_generated_kustomization
-  filename = "${local.polaris_generated_dir}/kustomization.yaml"
+  content              = local.polaris_generated_kustomization
+  filename             = "${local.polaris_generated_dir}/kustomization.yaml"
+  directory_permission = "0755"
+  file_permission      = "0644"
 }
 
 resource "local_file" "observability_values_patch" {
-  content  = local.observability_values_patch
-  filename = "${local.observability_generated_dir}/values-patch.yaml"
+  content              = local.observability_values_patch
+  filename             = "${local.observability_generated_dir}/values-patch.yaml"
+  directory_permission = "0755"
+  file_permission      = "0644"
 }
 
 resource "local_file" "observability_generated_kustomization" {
-  content  = local.observability_generated_kustomization
-  filename = "${local.observability_generated_dir}/kustomization.yaml"
+  content              = local.observability_generated_kustomization
+  filename             = "${local.observability_generated_dir}/kustomization.yaml"
+  directory_permission = "0755"
+  file_permission      = "0644"
 }
 
 resource "local_file" "alloy_values_patch" {
-  content  = local.alloy_values_patch
-  filename = "${local.alloy_generated_dir}/values-patch.yaml"
+  content              = local.alloy_values_patch
+  filename             = "${local.alloy_generated_dir}/values-patch.yaml"
+  directory_permission = "0755"
+  file_permission      = "0644"
 }
 
 resource "local_file" "alloy_generated_kustomization" {
-  content  = local.alloy_generated_kustomization
-  filename = "${local.alloy_generated_dir}/kustomization.yaml"
+  content              = local.alloy_generated_kustomization
+  filename             = "${local.alloy_generated_dir}/kustomization.yaml"
+  directory_permission = "0755"
+  file_permission      = "0644"
 }
