@@ -234,6 +234,8 @@ just bootstrap-apply-config
 just bootstrap-etcd
 just bootstrap-kubeconfig
 just bootstrap-wait-ready
+just set-kubernetes-version version=1.34.5
+just upgrade-kubernetes target=1.34.5 dry_run=true
 just generate-artifacts
 just kubeconfig
 just print-cluster-info
@@ -257,6 +259,10 @@ just print-cluster-info
 - generated cluster-local manifests under `03-infrastructure/clusters/<cluster-name>/.generated/`
 
 Use it when you change generated inputs like the MetalLB address pool or Talos config patches and want to refresh the rendered files without re-running cluster bootstrap.
+
+`just set-kubernetes-version version=1.34.5` updates `talos_kubernetes_version` in `cluster.tfvars` and then runs `just generate-artifacts` so the desired Kubernetes version and generated machine configs stay in sync.
+
+`just upgrade-kubernetes target=1.34.5 dry_run=true` runs `talosctl upgrade-k8s` against the live cluster. By default it uses the configured target version from `cluster.tfvars` and performs a dry-run plan; set `dry_run=false` to execute the upgrade for real. Talos may also refresh Talos-managed manifests such as CoreDNS, so run `just reconcile-flux` after a real upgrade.
 
 ### `03-infrastructure`
 

@@ -169,6 +169,128 @@ doctor:
       exit "$status"
     fi
 
+set-kubernetes-version version='': require-config
+    #!/usr/bin/env bash
+    set -euo pipefail
+    version="{{version}}"
+    case "$version" in
+      version=*)
+        version="${version#version=}"
+        ;;
+    esac
+    if [ -z "$version" ]; then
+      echo "Missing Kubernetes version. Pass version=1.34.5." >&2
+      exit 1
+    fi
+    if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+      echo "Invalid Kubernetes version '$version'. Expected format like 1.34.5." >&2
+      exit 1
+    fi
+
+    if grep -Eq '^talos_kubernetes_version[[:space:]]*=' "{{cluster_config}}"; then
+      perl -0pi -e 's/^talos_kubernetes_version[[:space:]]*=[[:space:]]*"[^"]*"/talos_kubernetes_version = "'"$version"'"/m' "{{cluster_config}}"
+    elif grep -Eq '^#[[:space:]]*talos_kubernetes_version[[:space:]]*=' "{{cluster_config}}"; then
+      perl -0pi -e 's/^#[[:space:]]*talos_kubernetes_version[[:space:]]*=[[:space:]]*"[^"]*"/talos_kubernetes_version = "'"$version"'"/m' "{{cluster_config}}"
+    elif grep -Eq '^talos_version[[:space:]]*=' "{{cluster_config}}"; then
+      perl -0pi -e 's/^(talos_version[[:space:]]*=[[:space:]]*"[^"]*")/$1\ntalos_kubernetes_version = "'"$version"'"/m' "{{cluster_config}}"
+    else
+      echo "Could not find talos_version in {{cluster_config}} to place talos_kubernetes_version after it." >&2
+      exit 1
+    fi
+
+    echo "Updated talos_kubernetes_version to $version in {{cluster_config}}"
+    just generate-artifacts
+    echo "Regenerated derived artifacts. Commit {{cluster_config}} and any generated changes next."
+
+upgrade-kubernetes target='' dry_run='true' from='': require-config require-talosconfig require-kubeconfig
+    #!/usr/bin/env bash
+    set -euo pipefail
+    target_version="{{target}}"
+    from_version="{{from}}"
+    dry_run="{{dry_run}}"
+    case "$target_version" in
+      target=*)
+        target_version="${target_version#target=}"
+        ;;
+    esac
+    case "$from_version" in
+      from=*)
+        from_version="${from_version#from=}"
+        ;;
+    esac
+    case "$dry_run" in
+      dry_run=*)
+        dry_run="${dry_run#dry_run=}"
+        ;;
+    esac
+
+    if [ -z "$target_version" ]; then
+      target_version="$(sed -nE 's/^talos_kubernetes_version[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' "{{cluster_config}}" | head -n1)"
+    fi
+    if [ -z "$target_version" ]; then
+      echo "Missing target Kubernetes version. Pass target=1.34.5 or set talos_kubernetes_version in {{cluster_config}}." >&2
+      exit 1
+    fi
+    if [[ ! "$target_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+      echo "Invalid target Kubernetes version '$target_version'. Expected format like 1.34.5." >&2
+      exit 1
+    fi
+
+    if [ -z "$from_version" ]; then
+      if ! command -v jq >/dev/null 2>&1; then
+        echo "Missing jq. Install jq or pass from=1.34.4 explicitly." >&2
+        exit 1
+      fi
+      from_version="$(
+        kubectl --kubeconfig "{{generated_dir}}/kubeconfig" version -o json \
+          | jq -r '.serverVersion.gitVersion // empty' \
+          | sed 's/^v//'
+      )"
+    fi
+    if [ -z "$from_version" ]; then
+      echo "Could not determine current Kubernetes version from the cluster. Pass from=1.34.4 explicitly." >&2
+      exit 1
+    fi
+    if [[ ! "$from_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+      echo "Invalid source Kubernetes version '$from_version'. Expected format like 1.34.4." >&2
+      exit 1
+    fi
+
+    case "$dry_run" in
+      true|false)
+        ;;
+      *)
+        echo "Invalid dry_run value '$dry_run'. Use dry_run=true or dry_run=false." >&2
+        exit 1
+        ;;
+    esac
+
+    bootstrap_node="$(terraform -chdir=02-bootstrap output -raw bootstrap_node_ip)"
+    talosconfig_path="$(pwd)/{{generated_dir}}/talosconfig"
+
+    cmd=(
+      talosctl
+      --talosconfig "$talosconfig_path"
+      --endpoints "$bootstrap_node"
+      upgrade-k8s
+      --nodes "$bootstrap_node"
+      --from "$from_version"
+      --to "$target_version"
+      --with-docs=false
+      --with-examples=false
+    )
+    if [ "$dry_run" = "true" ]; then
+      cmd+=(--dry-run)
+    fi
+
+    printf 'Running Kubernetes upgrade via Talos: %s -> %s (dry_run=%s)\n' "$from_version" "$target_version" "$dry_run"
+    "${cmd[@]}"
+    if [ "$dry_run" = "true" ]; then
+      echo "Dry-run complete. Review any Talos-managed manifest changes, especially CoreDNS."
+    else
+      echo "Kubernetes upgrade completed. Run 'just reconcile-flux' afterwards so Flux can re-apply cluster-specific patches such as CoreDNS."
+    fi
+
 init-config:
     if [ -f "{{cluster_config}}" ]; then echo "{{cluster_config}} already exists" >&2; exit 1; fi
     if [ -f "{{cluster_secrets}}" ]; then echo "{{cluster_secrets}} already exists" >&2; exit 1; fi
