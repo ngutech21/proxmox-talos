@@ -31,6 +31,15 @@ exemptions:
     rules:
       - priorityClassNotSet
 
+  - namespace: kube-system
+    controllerNames:
+      - kube-apiserver
+      - kube-controller-manager
+      - kube-scheduler
+    rules:
+      - hostNetworkSet
+      - notReadOnlyRootFilesystem
+
   - namespace: longhorn-system
     controllerNames:
       - longhorn-manager
