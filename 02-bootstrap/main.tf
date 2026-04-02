@@ -4,7 +4,7 @@ terraform {
   required_providers {
     local = {
       source  = "hashicorp/local"
-      version = "~> 2.7"
+      version = "~> 2.8"
     }
 
     talos = {
