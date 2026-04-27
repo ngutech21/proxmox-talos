@@ -157,7 +157,7 @@ talos_image_datastore = "local"
 talos_image_filename  = "talos-nocloud-amd64.raw"
 talos_install_disk    = "/dev/sda"
 talos_installer_image = "factory.talos.dev/installer/<schematic-id>:v1.12.5"
-talos_version         = "v1.12.5"
+talos_version         = "v1.13.0"
 talos_dns_domain      = "cluster.local"
 
 cluster_nodes = [
