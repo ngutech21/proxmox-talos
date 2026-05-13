@@ -1,10 +1,10 @@
 terraform {
-  required_version = ">= 1.15.2"
+  required_version = ">= 1.15.3"
 
   required_providers {
     local = {
       source  = "hashicorp/local"
-      version = "~> 2.8"
+      version = "~> 2.9"
     }
 
     talos = {
