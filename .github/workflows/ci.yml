@@ -56,7 +56,7 @@ jobs:
         uses: hashicorp/setup-terraform@v4.0.1
 
       - name: Setup TFLint
-        uses: terraform-linters/setup-tflint@v6.2.2
+        uses: terraform-linters/setup-tflint@v6.3.0
 
       - name: Lint 01-provision
         working-directory: 01-provision
