@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.16.2"
+  required_version = ">= 1.16.4"
 
   required_providers {
     local = {
@@ -9,7 +9,7 @@ terraform {
 
     talos = {
       source  = "siderolabs/talos"
-      version = "~> 0.11.0"
+      version = "~> 0.12.0"
     }
   }
 }
